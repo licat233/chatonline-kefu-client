@@ -1,0 +1,25 @@
+.chatIframe {
+  box-sizing: border-box;
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.custom-notifycard {
+  width: 100%;
+  max-width: 50%;
+  height: 40px;
+  line-height: 40px;
+  background-color: #f2f2f2;
+  color: #333;
+  padding: 0 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.custom-notifycard p {
+  display: inline-block;
+  margin: 0;
+  font-size: 16px;
+}
