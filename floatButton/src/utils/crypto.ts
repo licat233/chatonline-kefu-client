@@ -1,9 +1,9 @@
 import { Buffer } from 'buffer';
 
 //加密
-export function encryptData(data: any): string {
+export function encryptData(data: any, secretKey?: string): string {
     const input = JSON.stringify(data)
-    return encryptString(input)
+    return encryptString(input, secretKey)
 }
 
 export function decryptJSONString(input: string, date?: Date): string {

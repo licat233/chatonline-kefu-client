@@ -1,3 +1,13 @@
+// import {addAnchorTagsToUrls} from '../src/utils'
+
+// const inputText = "这是一个链接https://line.me/ti/p/2fT-oGdEh4哈哈哈哈"
+// const res = addAnchorTagsToUrls(inputText);
+// console.log(res)
+
+
+// const res = inputText.replace(urlRegex, '<a href="$&">$&</a>');
+// const res = addAnchorTagsToUrls(inputText)
+// console.log(res)
 
 // const slogan = "光平哥哥真帥";
 // const key = "really and truly"; //genSecretKey()

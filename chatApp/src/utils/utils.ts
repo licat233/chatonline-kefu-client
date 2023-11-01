@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
+import getUrls from 'get-urls';
 
-
-export function goodbye() {
-    return "確定離開當前頁面嗎？...";
+export function goodbye(this: Window, ev: BeforeUnloadEvent) {
+    ev.returnValue = "Are you sure to leave the current page？...";
 }
 
 //去掉左右两边的空白
@@ -75,12 +75,12 @@ export function getTwoDaysAgoDate() {
 
 export function friendlyDate(timestamp: number) {
     let formats: Record<string, string> = {
-        'year': '%n% 年前',
-        'month': '%n% 月前',
-        'day': '%n% 天前',
-        'hour': '%n% 小時前',
-        'minute': '%n% 分鐘前',
-        'second': '%n% 秒前',
+        'year': '%n% years ago',
+        'month': '%n% months ago',
+        'day': '%n% days ago',
+        'hour': '%n% hours ago',
+        'minute': '%n% minutes ago',
+        'second': '%n% seconds ago',
     };
 
     let now = Date.now();
@@ -142,15 +142,15 @@ export function msgDate(timestamp: number) {
     }
     switch (durationDay) {
         case 0:
-            return "今天"
+            return "today"
         case 1:
-            return "昨天"
+            return "yesterday"
         default:
             let targetTime = dayjs(timestamp);
             let targetMonth = targetTime.month() + 1;
             let targetDate = targetTime.date();
             let targetDay = targetTime.day();
-            let weekArrayList = ['日', '一', '二', '三', '四', '五', '六'];
+            let weekArrayList = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             let targetWeek = weekArrayList[targetDay];
             return `${targetMonth}/${targetDate}${targetWeek}`;
     }
@@ -176,14 +176,14 @@ export function msgTime(timestamp: string | number | Date) {
     let state = ``;
     // 判断时间段
     if (hours >= 0 && hours <= 6) {
-        state = `凌晨`;
+        state = `AM`;
     } else if (hours > 6 && hours <= 12) {
-        state = `上午`;
+        state = `AM`;
     } else if (hours > 12 && hours <= 18) {
-        state = `下午`;
+        state = `PM`;
         hours -= 12;
     } else if (hours > 18 && hours <= 24) {
-        state = `晚上`;
+        state = `PM`;
         hours -= 12;
     } else {
         throw Error("hours < 0")
@@ -281,7 +281,7 @@ export function banDevtool() {
 export function isMobile() {
     const currentPlatform = window?.navigator.platform;
     if (!currentPlatform || !window || !window.sessionStorage) {
-        console.warn("不支持當前設備")
+        console.warn("Current device not supported")
         return false
     }
     if (/Win|Mac|Linux\s[^arm]/.test(currentPlatform)) {
@@ -360,7 +360,7 @@ export const showNotification = (title: string, options: NotificationOptions | u
         }, "*");
     }
     if (!("Notification" in window)) {
-        console.log("该浏览器不支持通知功能");
+        console.log("This browser does not support notification functionality");
         return;
     }
     let notification: Notification | undefined;
@@ -458,6 +458,17 @@ export function playSound(el: HTMLAudioElement | null, src: string) {
     }
     const p = b.play();
     p && p.then(function () { }).catch(function (e) { });
+}
+
+//震动
+export function vibrate(pattern?: Iterable<number>) {
+    // 检查浏览器是否支持振动API
+    if ("vibrate" in navigator) {
+        // 触发手机震动，参数是一个震动模式的数组，可以在数组中指定震动和暂停的持续时间（毫秒）
+        navigator.vibrate(pattern || [200]);
+    } else {
+        console.log("Browser does not support vibration API");
+    }
 }
 
 export function isTimestamp(timestamp: number) {
@@ -565,28 +576,24 @@ export function calculateMaxChars(element: HTMLElement) {
 
 //给url加上a标签
 export function addAnchorTagsToUrls(inputText: string): string {
-    const urlRegex = /[a-zA-Z]+:\/\/[a-zA-Z0-9./?#_%&=-]+/g;
-    const urls = inputText.match(urlRegex);
-
-    if (!urls) {
+    const urls = getUrls(inputText)
+    if (!urls || urls.size === 0) {
         return inputText;
     }
-    const all = urls.sort((a, b) => b.length - a.length)
     let result = inputText;
-    all.forEach((url) => {
+    urls.forEach((url) => {
         const link = `<a href="${url}" target="_blank">${url}</a>`;
-        const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const urlPattern = new RegExp(`([^(">)]${escapedUrl}(?!(</a>)))`, 'g');
-        result = result.replace(urlPattern, link);
+        // const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // result = result.replace(url, '<a href="$&" target="_blank">$&</a>')
+        // const urlPattern = new RegExp(`([^>]${url}(?!(</a>)))`, 'g');
+        result = result.replace(url, link);
     })
 
     return result;
 }
 
 export const getReferer = (): string => {
-    const referer = getQueryParamValue("referer")
-    if (referer) return referer;
-    const win = window.parent
+    const win = window.top
     if (win) return win.location.href;
     return window.location.href
 }
@@ -651,3 +658,8 @@ export const openUniquePage = (url: string): Window | null => {
     }
     return window.open(url, url);
 };
+
+export const IsDev = (): boolean => {
+    const isDev = process.env.NODE_ENV === 'development' || getQueryParamValue("dev") !== null;
+    return isDev;
+}

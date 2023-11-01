@@ -3,52 +3,46 @@ import './App.css';
 
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions } from "wukongimjssdk"
 import { Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, getQueryParamValue, getRandomItem, addQueryParam, openUniquePage } from './utils/utils';
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, addQueryParam, openUniquePage, vibrate, IsDev, goodbye } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
 import { Button, Image, Popover, Tooltip, message } from "antd";
-
-//svg start
-import identifiedsvg from "./static/icons/identified.svg";
-import searchsvg from "./static/icons/search.svg";
-import infosvg from "./static/icons/info.svg";
-import menusvg from "./static/icons/menu.svg";
-import addsvg from "./static/icons/add.svg";
-import camerasvg from "./static/icons/camera.svg";
-import imagesvg from "./static/icons/image.svg";
-import rightsvg from "./static/icons/right.svg";
-import smailsvg from "./static/icons/smail.svg";
-import mic from "./static/icons/ic-mic-o.svg";
-import send from "./static/icons/send.svg";
-//svg end
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
-
-import 'tippy.js/dist/tippy.css';
 import { API } from './apitypes';
 import chalk from 'chalk';
+import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
 
 export interface AppConf {
-    slogan?: string,
-    cv_urls?: string[],
-    project_uid?: "",
+    referer: string;
+    projectUid: string,
+    OpenChatWindow?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
+    conversionEvent1?: () => void, //用户初次转化事件，由父页面定义
+    conversionEvent2?: () => void, //用户点击发送按钮时的事件，由父页面定义
+    getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义
 }
 
-const useCache = false;
-const channelType = ChannelTypeGroup;
-const apiUrl: string = window.location.protocol + "//api.im.mixbench.net/v1";
-const projectUid = getQueryParamValue("project_uid") || window.LICAT_KEFU.project_uid;
-const cvUrl = getRandomItem(window.LICAT_KEFU.cv_urls)
-const cacheLoginInfoKey = "info-" + projectUid; //防止多个项目之间的数据混淆
-const cacheLastLoginTimeKey = "visitorLastLoginAt-" + projectUid
-const cacheMessagesKey = "messages-" + projectUid;
-const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
-const maxInputLength = 800;
-const isChildrenIframe = isIframe()
-const notSupportText = "暫不開放該功能"
+export interface AppProps {
+    conf: AppConf
+    apiURL: string,
+}
 
-function App() {
+const isDev = IsDev()
+let isFirstLoad = true
+
+function App(props: AppProps) {
+    const { referer, projectUid } = props.conf
+    const apiURL = props.apiURL
+    const useCache = false;
+    const channelType = ChannelTypeGroup;
+    const cacheLoginInfoKey = "info-" + projectUid; //防止多个项目之间的数据混淆
+    const cacheLastLoginTimeKey = "visitorLastLoginAt-" + projectUid
+    const cacheMessagesKey = "messages-" + projectUid;
+    const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
+    const maxInputLength = 800;
+    const isChildrenIframe = isIframe()
+    const notSupportText = "Not supported"
     const [showChatInputTool, setShowChatInputTool] = useState<boolean>(true);
     const [placeholdertext, setPlaceholdertext] = useState<string>("Aa");
     // const [chatInputInitHeight, setChatInputInitHeight] = useState<string>("34px");
@@ -81,18 +75,15 @@ function App() {
     const chatMessageAudioRef = useRef<HTMLAudioElement>(null);
     const chatMessageSendAudioRef = useRef<HTMLAudioElement>(null);
     const isLogined = useRef<boolean>(false);
-    // const inputContentCache = useRef<string>("");
     const inputHeight = useRef<string>("");
     const [loading, setLoading] = useState(false);
     const loadRecordCompleted = useRef<boolean>(false);
     const prohibitSend = useRef<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage();
 
-
-    const info = (msg: string) => {
-        messageApi.info(msg);
-    };
-    // const notOnlineAlert = useRef(false)
+    // const info = (msg: string) => {
+    //     messageApi.info(msg);
+    // };
 
     const success = (msg: string) => {
         messageApi.open({
@@ -101,7 +92,7 @@ function App() {
         });
     };
 
-    const error = (msg: string) => {
+    const errors = (msg: string) => {
         messageApi.open({
             type: 'error',
             content: msg,
@@ -115,12 +106,9 @@ function App() {
         });
     };
 
-    const notSupport = (event: React.MouseEvent<HTMLDivElement> | undefined) => {
+    const disableEvent = (event: React.MouseEvent<HTMLDivElement> | undefined) => {
         event?.stopPropagation();// 阻止blur事件冒泡
-        info("暫不開放該功能");
         event?.preventDefault(); //阻止默认事件
-        //继续保持聚焦
-        // inputFocus()
     }
 
     const copyElementText = async (content: string, parse: boolean = true) => {
@@ -132,11 +120,17 @@ function App() {
         }
         const ok = await copyTextToClipboard(text)
         if (ok) {
-            success("已復製")
+            success("Copied")
         } else {
-            error("複製失敗")
+            errors("Copy failed")
         }
     }
+
+    useEffect(() => {
+        if (isFirstLoad) {
+            historyScrollToBottom();
+        }
+    })
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -146,8 +140,13 @@ function App() {
             isStartup.current = true
             startup()
         }
+
         initNotification();
-        window.OpenChatWindow = OpenChatWindow
+        window.LICAT_KEFU.OpenChatWindow = OpenChatWindow
+        window.addEventListener('beforeunload', goodbye)
+        return () => {
+            window.removeEventListener('beforeunload', goodbye)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -164,7 +163,6 @@ function App() {
                 wsAddrs.current = await getWsaddrs()
             }
             if (wsAddrs.current.length > 0) {
-                // console.log("connectAddrs--->", wsaddrs)
                 addrUsed.current = true
                 callback(wsAddrs.current[0])
             }
@@ -174,35 +172,26 @@ function App() {
         // 连接状态监听
         WKSDK.shared().connectManager.addConnectStatusListener(
             (status, reasonCode) => {
-                if (status === ConnectStatus.Connected) {
-                    // console.log('连接成功');
-                } else if (status === ConnectStatus.Disconnect) {
+                if (status === ConnectStatus.Disconnect) {
                     if (addrUsed.current && wsAddrs.current.length > 1) {
                         const oldwsAddr = wsAddrs.current[0]
                         wsAddrs.current.splice(0, 1)
                         wsAddrs.current.push(oldwsAddr)
                         addrUsed.current = false
-                        // console.log("连接失败！切换地址->", wsAddrs.current[0])
                     }
-                } else {
-                    console.error('connect fail code:', reasonCode); //  reasonCode: 2表示认证失败（uid或token错误）
+                } else if (status !== ConnectStatus.Connected) {
+                    errors('connect fail code:' + reasonCode)//  reasonCode: 2表示认证失败（uid或token错误）
                 }
             },
         );
         // 消息发送状态监听
         WKSDK.shared().chatManager.addMessageStatusListener((packet) => {
-            // console.log('消息clientSeq->', packet.clientSeq); // 客户端序号用来匹配对应的发送的消息
-            if (packet.reasonCode === 1) {
-                // 发送成功
-                // console.log("发送成功")
-            } else {
-                // 发送失败
-                error("發送失敗");
+            if (packet.reasonCode !== 1) {
+                errors("Sending failed");
             }
         });
         // 消息监听
         WKSDK.shared().chatManager.addMessageListener((message) => {
-            // console.log("接收到消息-->", message)
             if (!verifyMsg(message)) return; //忽略掉不支持的消息
             messageStore.push(message);
             //更新视图
@@ -224,6 +213,9 @@ function App() {
         setLoading(true);
         await loadChatRecord();
         setLoading(false);
+        setTimeout(() => {
+            isFirstLoad = false;
+        }, 500)
     }
 
     const sendMessageToParent = (messageBody: string) => {
@@ -239,18 +231,27 @@ function App() {
             //如果是iframe页面，应该通知父页面
             sendMessageToParent(body)
         }
-        showNotification("新訊息", {
+        showNotification("New message", {
             body: replaceHtml(body),
             icon: getAvatarUrl(message)
         }, function () {
             window.focus();
             this.close();
-            let chatUrl = getReferer()
-            chatUrl = addQueryParam(chatUrl, { "event": "openChat" })
-            openUniquePage(chatUrl);
+            //需要判断当前页面处于Iframe中还是单独的标签页中
+            let chatWebUrl = getReferer(); //打开标签页
+            if (isChildrenIframe) {
+                //打开父页面
+                chatWebUrl = referer
+            } else {
+                chatWebUrl = window.location.href
+            }
+            chatWebUrl = addQueryParam(chatWebUrl, { "openChat": "" })
+            openUniquePage(chatWebUrl);
         });
+        //提示声音
         alertSound();
-        // console.log("接收到消息，请编写通知事件->", message)
+        //震动一下
+        vibrate();
     }
 
     const syncMessageCallback = async (channel: Channel, opts: SyncOptions): Promise<Message[]> => {
@@ -305,36 +306,29 @@ function App() {
 
     //加载更多聊天记录
     const loadMoreChatRecord = async (e: React.UIEvent<HTMLElement, UIEvent>) => {
-        const target = e.currentTarget
+        if (loadRecordCompleted.current || loading) return;
         //如果不处于顶部，则不加载聊天记录
-        if (target.scrollTop !== 0) return;
-        if (loading) return;
+        if (e.currentTarget.scrollTop !== 0) return;
         //显示加载中...
         setLoading(true);
         //在下一次渲染完成后
-        setTimeout(async () => {
-            if (target.scrollTop !== 0) return;
-            await loadChatRecord();
-            setLoading(false);
-        })
+        await loadChatRecord();
     }
 
     //发送message
     const sendMessage = async (content: MessageText): Promise<boolean> => {
         if (!sendBtnRef.current) return false;
         if (!isLogined.current) {
-            error("not logged in!")
+            errors("not logged in!")
             return false
         }
         if (!visitorLoginResp.current.channel_uid) {
-            // console.error("channel uid undefined!!")
-            error("program error!")
+            errors("program error!")
             return false
         }
         return await WKSDK.shared().chatManager.send(content, newChannel()).then(reason => {
             return true
         }).catch(err => {
-            error("發送失敗")
             return false
         })
     }
@@ -355,20 +349,18 @@ function App() {
                 user_uid = info.user_uid
             }
         } catch (e) {
-            // console.warn("parse cache value fail")
             localStorage.removeItem(cacheLoginInfoKey);
             localStorage.removeItem(cacheLastLoginTimeKey)
         }
 
         const loginReq: API.VisitorLoginReq = {
             platform: getOperatingSystem(),
-            referer: getReferer(),
+            referer: referer,
             project_uid: projectUid,
             user_uid: user_uid || "",
             reset_kefu: true,
         }
-        const data = encryptData(loginReq)
-        return axios.post(`${apiUrl}/visitor/login`, data).then(function (response) {
+        return axios.post(`${apiURL}/visitor/login`, encryptData(loginReq)).then(function (response) {
             const base64Data = response.data
             const date = new Date()
             const jsonStr = decryptJSONString(base64Data, date)
@@ -383,12 +375,15 @@ function App() {
                 return null
             }
         }).catch(function (error) {
-            console.error(error);
+            if (isDev) {
+                console.error(error);
+            }
+            error.message && errors(error.message)
             return null;
         });
     }
     const getWsaddrs = async () => {
-        return axios.get(`${apiUrl}/users/${visitorLoginResp.current.user_uid}/im`).then(resp => {
+        return axios.get(`${apiURL}/users/${visitorLoginResp.current.user_uid}/im`).then(resp => {
             const data = resp.data
             let addr = data.wss_addr
             if (!addr || addr === '') {
@@ -399,13 +394,12 @@ function App() {
     }
     const getSyncMessage = async (req: API.SyncMessagesReq): Promise<Message[]> => {
         const data = encryptData(req)
-        return axios.post(apiUrl + "/visitor/message/sync", data).then(resp => {
+        return axios.post(apiURL + "/visitor/message/sync", data).then(resp => {
             try {
                 const decryptData = decryptJSONString(resp.data);
                 const jsonData = JSON.parse(decryptData) as API.SyncMessagesResp;
                 if (!Array.isArray(jsonData.messages)) {
-                    error("Server returned sync data type error")
-                    // console.log(chalk.yellow("data type error: ", typeof data.messages))
+                    errors("Server returned sync data type error")
                     return [];
                 }
                 syncMessagesResp.current = jsonData
@@ -415,8 +409,10 @@ function App() {
                 })
                 return res
             } catch (err) {
-                error("Server returned sync data type error")
-                console.log(chalk.yellow("parse respData error:"), err)
+                errors("Server returned sync data type error")
+                if (isDev) {
+                    console.log(chalk.yellow("parse respData error:"), err)
+                }
                 return []
             }
         })
@@ -429,7 +425,6 @@ function App() {
             messages = JSON.parse(messagesText);
         } catch (e) {
             localStorage.removeItem(cacheMessagesKey);
-            //TODO handle the exception
         } finally {
             if (!Array.isArray(messages)) {
                 localStorage.removeItem(cacheMessagesKey);
@@ -448,7 +443,7 @@ function App() {
     const getAvatarUrl = (msg?: Message) => {
         const uid = msg?.fromUID
         if (!uid) return "https://swifttalk-storage.oss-cn-hongkong.aliyuncs.com/icon/contact_blue.png";
-        return `${apiUrl}/users/${uid}/avatar`
+        return `${apiURL}/users/${uid}/avatar`
     }
 
     const showChattoolright = () => {
@@ -456,13 +451,12 @@ function App() {
     }
 
     const inputFocus = () => {
-        // console.log("focus event")
         //还原用户输入的文本
         if (textareaRef.current) {
             //还原高度
             textareaRef.current.style.setProperty("height", inputHeight.current);
         }
-        setPlaceholdertext("輸入消息");
+        setPlaceholdertext("Input Message");
         setShowChatInputTool(false);
         if (getInputContext()) {
             setShowChatInputMic(false);
@@ -493,7 +487,6 @@ function App() {
     }
 
     const inputBlur = () => {
-        // console.log("blur event")
         //blur事件优先于click事件，会阻止click事件的触发
         //解决方案①：使用延迟压栈，解决click与blur事件冲突问题
         // let _this = this;
@@ -517,7 +510,7 @@ function App() {
         const content = textareaRef.current?.value || ""
         const len = content.length
         if (len >= maxInputLength) {
-            warning("內容長度已達最大")
+            warning("The content length has reached the maximum")
         }
     }
     const getInputContext = (): string => {
@@ -534,23 +527,27 @@ function App() {
 
     //当展示当前窗口时，应该滚动聊天记录到底部
     const OpenChatWindow = () => {
-        historyScrollToBottom(true);
+        historyScrollToBottom();
     }
 
     const conversionEvent = () => {
         try {
-            const wind = window.parent
-            wind.conversionEvent2 && wind.conversionEvent2()
-            console.log("run window.conversionEvent2")
+            const cvFn2 = window.parent.LICAT_KEFU?.conversionEvent2
+            cvFn2 && cvFn2()
+            if (isDev) {
+                console.log("run window.conversionEvent2")
+            }
         } catch (err) {
-            console.error("run conversionEvent2 error:", err)
+            if (isDev) {
+                console.error("run conversionEvent2 error:", err)
+            }
         }
     }
 
     const submitMsg = async (event: React.MouseEvent<HTMLDivElement>) => {
         event.stopPropagation();// 阻止blur事件冒泡
         if (prohibitSend.current) {
-            warning("檢測到異常操作，當前操作已被禁止！")
+            warning("Detected abnormal operation, current operation has been disabled!")
             return
         }
         let text = getInputContext();
@@ -592,7 +589,7 @@ function App() {
         oninput(); //保持輸入狀態
         //压栈，渲染完成后再执行
         setTimeout(() => {
-            historyScrollToBottom(true);
+            historyScrollToBottom();
         });
         //防止阻止系统默认(行为)，主要是为了阻止onblur事件
         event.preventDefault();
@@ -607,11 +604,12 @@ function App() {
             submitMsg(event);
         }
     }
-    const historyScrollToBottom = (animation = false) => {
+    const historyScrollToBottom = () => {
         //获取内容高度,滚动到底部
         if (chathistoryRef.current) {
             const element = chathistoryRef.current
-            element.scrollTop = element.scrollHeight - element.clientHeight;
+            element.scrollTo(0, 999999)
+            // element.scrollTop = element.scrollHeight - element.clientHeight;
         }
     }
     const inputScrollToTop = () => {
@@ -665,7 +663,7 @@ function App() {
                 //图片消息
                 let url = msg.content?.contentObj?.url
                 if (!url) return ""
-                return "[圖片]"
+                return "[Image]"
             default:
                 //其它类型消息，暂不支持
                 return ""
@@ -703,18 +701,18 @@ function App() {
         }
     }
 
-    const openKefuUrl = (event: any) => {
-        const kefuUrl = cvUrl || "";
-        if (!kefuUrl) return
-        if (kefuUrl.startsWith("line://", 0)) {
-            window.location.href = kefuUrl
-        } else {
-            const newWin = window.open(kefuUrl, "_blank");
-            if (newWin == null || typeof newWin == 'undefined' || newWin.closed || typeof newWin.closed == 'undefined') {
-                error("無法打開，請聯絡客服！");
-            }
-        }
-    }
+    // const openKefuUrl = (event: any) => {
+    //     const kefuUrl = cvUrl || "";
+    //     if (!kefuUrl) return
+    //     if (kefuUrl.startsWith("line://", 0)) {
+    //         window.location.href = kefuUrl
+    //     } else {
+    //         const newWin = window.open(kefuUrl, "_blank");
+    //         if (newWin == null || typeof newWin == 'undefined' || newWin.closed || typeof newWin.closed == 'undefined') {
+    //             error("無法打開，請聯絡客服！");
+    //         }
+    //     }
+    // }
 
     //提示音
     const alertSound = () => {
@@ -744,7 +742,6 @@ function App() {
         }
         res = res.replaceAll("\\n", "<br/>").replaceAll("\\r", "<br/>")
         let divE = document.createElement("div");
-        // console.log(res)
         divE.innerHTML = res
         let listE = divE.querySelectorAll("a");
         listE.forEach(aE => {
@@ -770,33 +767,37 @@ function App() {
                 return path
             }
         }
-        return joinPath(apiUrl, path)
+        return joinPath(apiURL, path)
     }
 
     const viewHeader = (): JSX.Element => {
         return (
             <div className="chatfriend">
                 <div className="chatfriendbox">
-                    <img className="chatfriendlogo" src={getAvatarUrl()} onClick={openKefuUrl} alt="" />
                     <div className="chatfriendname">
-                        <img src={identifiedsvg} alt="" className='icon' />
-                        在線客服</div>
+                        <img className="chatfriendlogo" src={getAvatarUrl()} alt="" />
+                        {/* <SafetyCertificateTwoTone style={{ color: "#30bd69" }} twoToneColor="#30bd69" className='appicon' /> */}
+                        {/* <img src={identifiedsvg} alt="" className='appicon' /> */}
+                        Online customer service</div>
                     <div className="chatfriendicon">
                         <Tooltip title={notSupportText} trigger="click">
                             <div className="icon-btn chatfriendseach">
-                                <img src={searchsvg} alt="" className='icon' />
+                                <SearchOutlined className='appicon' />
+                                {/* <img src={searchsvg} alt="" className='appicon' /> */}
                                 <div className="chatfriendseachbtn"></div>
                             </div>
                         </Tooltip>
                         <Tooltip title={notSupportText} trigger="click">
                             <div className="icon-btn chatfriendinfo">
-                                <img src={infosvg} alt="" className='icon' />
+                                <PhoneOutlined className='appicon' rotate={90} />
+                                {/* <img src={infosvg} alt="" className='appicon' /> */}
                                 <div className="chatfriendinfobtn"></div>
                             </div>
                         </Tooltip>
                         <Tooltip title={notSupportText} trigger="click">
                             <div className="icon-btn chatfriendmenu">
-                                <img src={menusvg} alt="" className='icon' />
+                                <MenuOutlined className='appicon' />
+                                {/* <img src={menusvg} alt="" className='appicon' /> */}
                                 <div className="chatfriendmenubtn"></div>
                             </div>
                         </Tooltip>
@@ -817,7 +818,7 @@ function App() {
                 }
                 const contentElement = isSelf ? (<div className='none-select'>{content}</div>) : (<div className='none-select' dangerouslySetInnerHTML={{ __html: content }} />)
                 const viewCardMenu = (<div className='cardtools'>
-                    <Button type="dashed" className='cardtools-btn' onClick={() => { copyElementText(content, !isSelf) }}>複製</Button>
+                    <Button type="dashed" className='cardtools-btn' onClick={() => { copyElementText(content, !isSelf) }}>Copy</Button>
                 </div>)
                 return (
                     <Popover placement="bottom" className='messageCardPopover' content={viewCardMenu} trigger="click">
@@ -843,7 +844,7 @@ function App() {
                 return (
                     <div className="chatmessage">
                         <div className='messagecontent'>
-                            <div className='warnMessage none-select'>![未知訊息]</div>
+                            <div className='warnMessage none-select'>![Unknown message]</div>
                         </div>
                     </div>
                 )
@@ -871,7 +872,7 @@ function App() {
         return (
             <div className="selfchatcard">
                 <div className="chatmessagelabe">
-                    <div className="chatmessagestate none-select">已讀</div>
+                    <div className="chatmessagestate none-select">Read</div>
                     <div className="chatmessagetime">{msgTime}</div>
                 </div>
                 {viewMessageContent(msg)}
@@ -920,29 +921,32 @@ function App() {
                             <div className="chattools">
                                 <Tooltip title={notSupportText} trigger="click">
                                     <div className="icon-btn chatinputadd">
-                                        <img src={addsvg} alt="" className='icon' />
-                                        <div className="chatinputaddbtn">
-                                        </div>
+                                        {/* <img src={addsvg} alt="" className='appicon' /> */}
+                                        <PlusOutlined className='appicon' />
+                                        <div className="chatinputaddbtn" onClick={disableEvent}></div>
                                     </div>
                                 </Tooltip>
                                 <Tooltip title={notSupportText} trigger="click">
                                     <div className="icon-btn chatinputcamera">
-                                        <img src={camerasvg} alt="" className='icon' />
-                                        <div className="chatinputcamerabtn"></div>
+                                        {/* <img src={camerasvg} alt="" className='appicon' /> */}
+                                        <CameraOutlined className='appicon' />
+                                        <div className="chatinputcamerabtn" onClick={disableEvent}></div>
                                     </div>
                                 </Tooltip>
                                 <Tooltip title={notSupportText} trigger="click">
                                     <div className="icon-btn chatinputimg">
-                                        <img src={imagesvg} alt="" className='icon' />
-                                        <div className="chatinputimgbtn"></div>
+                                        {/* <img src={imagesvg} alt="" className='appicon' /> */}
+                                        <PictureOutlined className='appicon' />
+                                        <div className="chatinputimgbtn" onClick={disableEvent}></div>
                                     </div>
                                 </Tooltip>
                             </div>
                         </div>
                         <div className="icon-btn chattoolright animate__fadeIn" ref={chattoolrightRef} onClick={showChattoolright}
                             style={{ display: !showChatInputTool ? "" : "none" }}>
-                            <img src={rightsvg} alt="" className='icon' />
-                            <div className="chattoolrightbtn"></div>
+                            {/* <img src={rightsvg} alt="" className='appicon' /> */}
+                            <RightOutlined className='appicon' />
+                            <div className="chattoolrightbtn" onClick={disableEvent}></div>
                         </div>
                         <div className="chatinputbox" ref={chatinputboxRef}>
                             <textarea
@@ -966,20 +970,22 @@ function App() {
                             <div className="chatinputemoji">
                                 <Tooltip title={notSupportText} trigger="click">
                                     <div className="icon-btn chatinputemojibox">
-                                        <img src={smailsvg} alt="" className='icon' />
-                                        <div className="chatinputemojibtn"></div>
+                                        <SmileOutlined className='appicon' />
+                                        <div className="chatinputemojibtn" onClick={disableEvent}></div>
                                     </div>
                                 </Tooltip>
                             </div>
                         </div>
                         <Tooltip title={notSupportText} trigger="click">
                             <div className="icon-btn chatinputmic" style={{ display: showChatInputMic ? "" : "none" }} >
-                                <img src={mic} alt="" className='icon' />
-                                <div className="chattoolmicbtn"></div>
+                                <AudioOutlined className='appicon' />
+                                <div className="chattoolmicbtn" onClick={disableEvent}></div>
                             </div>
                         </Tooltip>
                         <div ref={sendBtnRef} className="icon-btn chatinputsubmit" style={{ display: !showChatInputMic ? "" : "none" }}>
-                            <img src={send} alt="" className='icon' />
+                            <span className='anticon appicon'>
+                                <svg viewBox="0 0 1024 1024" width="1.5em" height="1.5em" focusable="false" data-icon="picture" fill="currentColor" aria-hidden="true"><path d="M41.353846 876.307692l86.646154-320.984615h366.276923c9.846154 0 19.692308-9.846154 19.692308-19.692308v-39.384615c0-9.846154-9.846154-19.692308-19.692308-19.692308H128l-84.676923-315.076923C41.353846 157.538462 39.384615 151.630769 39.384615 145.723077c0-13.784615 13.784615-27.569231 29.538462-25.6 3.938462 0 5.907692 1.969231 9.846154 1.969231l886.153846 364.307692c11.815385 3.938462 19.692308 15.753846 19.692308 27.569231s-7.876923 21.661538-17.723077 25.6L78.769231 913.723077c-3.938462 1.969231-7.876923 1.969231-11.815385 1.969231-15.753846-1.969231-27.569231-13.784615-27.569231-29.538462 0-3.938462 0-5.907692 1.969231-9.846154z" p-id="46894" fill="#4960ff"></path></svg>
+                            </span>
                             <div className="chatinputsubmitbtn" onClick={submitMsg}></div>
                         </div>
                     </div>
@@ -1014,13 +1020,13 @@ function App() {
                         <div className="chatuibox">
                             <div className="chatpanel">
                                 <div className="chatui">
-                                    {viewHeader()}
                                     <div className="chathistorybox" ref={chathistoryboxRef}>
                                         <div className="chathistory" onScroll={loadMoreChatRecord} ref={chathistoryRef}>
                                             {renderLoading()}
                                             {messageStore.map((msg, index) => viewMessageCard(msg, index))}
                                         </div>
                                     </div>
+                                    {viewHeader()}
                                     {viewTools()}
                                 </div>
                             </div>

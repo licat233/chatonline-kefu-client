@@ -1,21 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<script>
-  window.LICAT_KEFU = {
-    slogan: "光平哥哥真帥",
-    src: 'http://192.168.1.2:3001/',
-    cv_urls: [],
-    shape: "circle",
-    project_uid: "dcf3c51e871a446294f9c89bbe2295f6",
-    newPage: false,
-  }
-  window.conversionEvent1 = ()=>{
-    console.log("run window.conversionEvent1")
-  }
-  window.conversionEvent2 = ()=>{
-    console.log("run window.conversionEvent2")
-  }
-</script>
 
 <head>
   <meta charset="utf-8" />
@@ -159,6 +143,16 @@
       }
     }
   </style>
+  <script>
+    window.LICAT_KEFU = window.parent.LICAT_KEFU || window.LICAT_KEFU || {
+      slogan: "光平哥哥真帥",
+      //chatUrl: 'https://www.24online.site/',
+      projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
+      newPage: false,
+      conversionEvent1: ()=>{},
+      conversionEvent2: ()=>{}
+    }
+  </script>
 </head>
 
 <body>

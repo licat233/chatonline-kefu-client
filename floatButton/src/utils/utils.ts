@@ -4,17 +4,27 @@ export function getRootUrl(url: string): string {
     return rootUrl;
 }
 
-export function updateUrlProtocol(url: string): string {
-    const currentProtocol = window.location.protocol;
-    const urlObject = new URL(url);
-
-    if (urlObject.protocol !== currentProtocol) {
-        urlObject.protocol = currentProtocol;
-    }
-
-    return urlObject.toString();
+export function isProtocolMissing(url: string) {
+    var protocolRegex = /^(?!(?:\w+:)?\/\/)/;
+    return protocolRegex.test(url);
 }
 
+export function updateUrlProtocol(url: string): string {
+    const currentProtocol = window.location.protocol;
+    if (isProtocolMissing(url)) {
+        url = currentProtocol + url
+        return url
+    }
+    try {
+        const urlObject = new URL(url);
+        if (urlObject.protocol !== currentProtocol) {
+            urlObject.protocol = currentProtocol;
+        }
+        return urlObject.toString();
+    } catch (error) {
+        return url
+    }
+}
 
 export function getRandomItem<T>(array: T[] | undefined): T | undefined {
     if (!array) return undefined
@@ -72,3 +82,35 @@ export const openUniquePage = (url: string): Window | null => {
     }
     return window.open(url, url);
 };
+
+export const getSupportList = () => {
+    const allows = [
+        "fullscreen",
+        "paymentrequest",
+        "usermedia",
+        "autoplay",
+        "scripts",
+        "popups",
+        "pointerlock",
+        "vr",
+        "camera",
+        "encrypted-media",
+        "geolocation",
+        "gyroscope",
+        "microphone",
+        "midi",
+        "payment",
+        "picture-in-picture",
+        "speaker",
+    ];
+    const supports = allows.filter(key => {
+        return key in navigator
+    })
+
+    return supports.join(" ")
+}
+
+export const IsDev = (): boolean => {
+    const isDev = process.env.NODE_ENV === 'development' || getQueryParamValue("dev") !== null;
+    return isDev;
+}
