@@ -18,7 +18,7 @@ const isDev = IsDev()
 const defaultConfig: CurrentAppConf = {
   slogan: "",
   projectUid: "",
-  chatUrl: 'http://localhost:3001/',
+  chatUrl: 'https://www.24online.site/',
   cvUrls: [],
   useChat: true,
   newPage: false,
