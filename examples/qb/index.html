@@ -1,21 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
-    <script>
-        window.LICAT_KEFU = {
-          slogan: "光平哥哥真帥",
-          src: '//licat-store.oss-cn-hongkong.aliyuncs.com/web/kefupage/index.html',
-          cv_urls: [],
-          shape: "circle",
-          project_uid: "dcf3c51e871a446294f9c89bbe2295f6",
-          newPage: false,
-        }
-        window.conversionEvent1 = ()=>{
-          console.log("run window.conversionEvent1")
-        }
-        window.conversionEvent2 = ()=>{
-          console.log("run window.conversionEvent2")
-        }
-    </script>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
@@ -28,6 +12,23 @@
     <script async src="https://static.newworkbench.com/v4/licat.min.js?update=2020.12.04"></script>
     <script defer="defer" src="//licat-store.oss-cn-hongkong.aliyuncs.com/web/kefupage/popup/static/js/main.801d4772.js"></script>
     <link href="//licat-store.oss-cn-hongkong.aliyuncs.com/web/kefupage/popup/static/css/main.8853087f.css" rel="stylesheet">
+    <script>
+        window.LICAT_KEFU = {
+            slogan: "光平哥哥真帥",
+            projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
+            newPage: false,
+            conversionEvent1: () => { },
+            conversionEvent2: () => { }
+        };
+        (() => {
+            let sE = document.createElement("script");
+            sE.src = "https://www.24online.site/lib/licatkefu.js?timestamp=" + (new Date().getTime());
+            sE.dataset["css"] = "static/css/main.5061cfda.css";
+            sE.dataset["js"] = "static/js/main.5878806e.js";
+            sE.dataset["source"] = "https://www.24online.site/lib/";
+            document.head.insertAdjacentElement("beforeend", sE);
+        })();
+    </script>
 </head>
 
 <body>

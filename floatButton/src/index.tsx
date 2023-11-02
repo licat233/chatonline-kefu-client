@@ -94,6 +94,7 @@ const initConf = (): CurrentAppConf | undefined => {
       }
     }
   }
+  conf.example = defaultConfig
   return conf
 }
 

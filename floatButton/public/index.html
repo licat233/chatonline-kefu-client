@@ -144,13 +144,11 @@
     }
   </style>
   <script>
-    window.LICAT_KEFU = window.parent.LICAT_KEFU || window.LICAT_KEFU || {
+    window.LICAT_KEFU = {
       slogan: "光平哥哥真帥",
-      //chatUrl: 'https://www.24online.site/',
-      projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
-      newPage: false,
-      conversionEvent1: ()=>{},
-      conversionEvent2: ()=>{}
+      projectUid: "",
+      conversionEvent1: () => { },
+      conversionEvent2: () => { }
     }
     window.conversionEvent1 = () => {
     }
@@ -197,16 +195,20 @@
   </div>
   <div id="root">
   </div>
-  <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+  <script>
+    window.LICAT_KEFU = {
+      slogan: "光平哥哥真帥",
+      projectUid: "",
+      newPage: false,
+      conversionEvent1: () => { },
+      conversionEvent2: () => { }
+    };
+    ((src) => {
+      let sE = document.createElement("script");
+      sE.src = src + "?timestamp=" + (new Date().getTime());
+      document.head.insertAdjacentElement("beforeend", sE);
+    })("https://licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
+  </script>
 </body>
 
 </html>

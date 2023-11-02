@@ -23,6 +23,8 @@ export interface CurrentAppConf {
   conversionEvent1?: () => void, //用户初次转化事件，由父页面定义
   conversionEvent2?: () => void, //用户点击发送按钮时的事件，由父页面定义
   getChatAppConf?: () => ChatAppConf | undefined, //用于子页面获取配置，由父页面定义
+  //example
+  example?: CurrentAppConf,
 }
 
 export interface ChatAppConf {
