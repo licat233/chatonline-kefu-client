@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App, { ChatAppConf, CurrentAppConf } from './App';
+import App, { CurrentAppConf } from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';

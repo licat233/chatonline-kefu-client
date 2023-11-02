@@ -7,7 +7,7 @@ import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, g
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
-import { Button, Image, Popover, Tooltip, message } from "antd";
+import { Button, Image, Popover, Spin, Tooltip, message } from "antd";
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
 import { API } from './apitypes';
@@ -994,23 +994,6 @@ function App(props: AppProps) {
         )
     }
 
-    const renderLoading = () => {
-        if (!loading) return <></>
-        return (<div className='loading-container'>
-            <div className='loading-text'>loading</div>
-            <div className="loading-box">
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-                <div className="loading-item"></div>
-            </div>
-        </div>)
-    }
-
     return (
         <>
             {contextHolder}
@@ -1022,7 +1005,7 @@ function App(props: AppProps) {
                                 <div className="chatui">
                                     <div className="chathistorybox" ref={chathistoryboxRef}>
                                         <div className="chathistory" onScroll={loadMoreChatRecord} ref={chathistoryRef}>
-                                            {renderLoading()}
+                                            <div className='loading-container'><Spin spinning={loading}></Spin></div>
                                             {messageStore.map((msg, index) => viewMessageCard(msg, index))}
                                         </div>
                                     </div>
