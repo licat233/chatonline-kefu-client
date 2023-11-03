@@ -164,7 +164,7 @@
     <!--Content before waves-->
     <div class="inner-header flex">
       <!--Just the logo.. Don't mind this-->
-      <img src="./licat.svg" type="image/svg+xml" width="50px" height="50px"
+      <img src="https://licat-store.oss-cn-hongkong.aliyuncs.com/logo/licat-logo.svg" type="image/svg+xml" width="50px" height="50px"
         style="background-color: #fff;border-radius: 50%;padding: 2px;margin:10px">
       <h1>Kefu Popup Demo</h1>
     </div>
@@ -198,17 +198,13 @@
   <script>
     window.LICAT_KEFU = {
       slogan: "光平哥哥真帥",
-      projectUid: "",
+      chatUrl: "http://127.0.0.1:3001",
       newPage: false,
+      projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
       conversionEvent1: () => { },
       conversionEvent2: () => { }
     };
-    ((src) => {
-      let sE = document.createElement("script");
-      sE.src = src + "?timestamp=" + (new Date().getTime());
-      document.head.insertAdjacentElement("beforeend", sE);
-    })("https://licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
-  </script>
+   </script>
 </body>
 
 </html>

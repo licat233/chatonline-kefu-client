@@ -58,7 +58,7 @@ const startup = () => {
     return
   }
 
-  window.LICAT_KEFU = conf;
+  window.LICAT_KEFU = Object.assign(window.LICAT_KEFU || {}, conf);
 
   const rootId = "root" + Date.now()
   let rootE = window.document.getElementById(rootId);

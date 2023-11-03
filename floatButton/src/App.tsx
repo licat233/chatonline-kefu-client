@@ -19,10 +19,11 @@ export interface CurrentAppConf {
   shape?: "square" | "circle",  //按钮形状
   btnColor?: string, //按钮颜色
   tipColor?: string,  //通知卡片颜色
-  OpenChatWindow?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
-  conversionEvent1?: () => void, //用户初次转化事件，由父页面定义
-  conversionEvent2?: () => void, //用户点击发送按钮时的事件，由父页面定义
-  getChatAppConf?: () => ChatAppConf | undefined, //用于子页面获取配置，由父页面定义
+  openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
+  conversionEvent1?: () => void, //用户初次转化事件，由用户自定义
+  conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
+  getChatAppConf?: () => ChatAppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
+  appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
   //example
   example?: CurrentAppConf,
 }
@@ -49,6 +50,15 @@ function App(appProps: AppProps) {
   const [msgTip, setMsgTip] = useState({ open: false, title: "" });
   const firstLoaded = useRef(false)
   const loadSuccess = useRef(false)
+  const firstOpenChat = useRef(false)
+
+  const [floatButtonStyle, setFloatButtonStyle] = useState<React.CSSProperties>({ display: useChat && !newPage ? "none" : "" })
+
+  const showFloatButton = () => {
+    setFloatButtonStyle({ ...floatButtonStyle, display: "" });
+  }
+
+  window.LICAT_KEFU.appLoadedCallback = showFloatButton
 
   if (!useChat) {
     if (cvUrls && cvUrls.length !== 0) {
@@ -111,6 +121,8 @@ function App(appProps: AppProps) {
   }
 
   const chatPageLink = useRef(getChatLink())
+  if (useChat && newPage) {
+  }
 
   const handleResize = () => {
     const width = window.innerWidth;
@@ -126,6 +138,9 @@ function App(appProps: AppProps) {
   }
 
   const switchChatWindow = (open?: boolean) => {
+    if (!firstOpenChat.current) {
+      firstOpenChat.current = true
+    }
     if (open) {
       setOpenChatWindow(true);
       return
@@ -136,7 +151,7 @@ function App(appProps: AppProps) {
   const afterOpenChange = () => {
     if (!openChatWindow) return
     localStorage.removeItem(msgCountCacheKey)
-    const openFn = iframeRef.current?.contentWindow?.LICAT_KEFU?.OpenChatWindow
+    const openFn = iframeRef.current?.contentWindow?.LICAT_KEFU?.openChatCallback
     openFn && openFn()
   }
 
@@ -191,6 +206,9 @@ function App(appProps: AppProps) {
   }
 
   const onClickButton = () => {
+    if (!firstOpenChat.current) {
+      firstOpenChat.current = true
+    }
     //AD的conversion事件
     conversionEvent()
     //一旦点击，就清除所有未读消息标志
@@ -310,6 +328,8 @@ function App(appProps: AppProps) {
           //如果是pc端，5秒钟后自动弹出聊天窗口
           if (isDesktopUA() && window.innerWidth > 768) {
             setTimeout(() => {
+              if (firstOpenChat.current) return
+              firstOpenChat.current = true
               switchChatWindow(true)
             }, 5000)
           }
@@ -329,7 +349,7 @@ function App(appProps: AppProps) {
   const handleVisibilityChange = () => {
     if (!document.hidden) {
       //如果有未读消息，则显示
-      if (msgCount > 0 || getQueryParamValue("openChat") !== null) {
+      if (msgCount > 0) {
         switchChatWindow(true)
       }
     }
@@ -347,12 +367,6 @@ function App(appProps: AppProps) {
     document.addEventListener("visibilitychange", handleVisibilityChange);
     //开始监听消息
     window.addEventListener('message', receiveMessage, false);
-    //如果是pc端，5秒钟后自动弹出聊天窗口
-    if (isDesktopUA() && window.innerWidth > 768) {
-      setTimeout(() => {
-        switchChatWindow(true)
-      }, 5000)
-    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -411,17 +425,35 @@ function App(appProps: AppProps) {
     )
   }
 
+  const renderFloatButtonIcon = () => {
+    return <div className='floatKefuButtonIconBox'>
+      <div>
+        <Tooltip
+          placement="topLeft"
+          color={tipColor}
+          open={msgTip.open}
+          arrow={false}
+          zIndex={899}
+          title={msgTip.title}>
+          <div style={{ width: "1px", height: "1px" }}></div>
+        </Tooltip>
+      </div>
+      <div className='floatKefuButtonIcon'><CustomerServiceOutlined /></div>
+    </div>
+  }
+
+  //通过appLoadedCallback控制悬浮按钮的显隐
   return (
     <section>
       <ConfigProvider theme={{ token: { colorPrimary: btnColor } }} drawer={{ styles: drawerStyles }}>
         {contextHolder}
         <FloatButton
-          icon={<Tooltip placement="topLeft" color={tipColor} open={msgTip.open} fresh={true} trigger="contextMenu" title={msgTip.title}><div className='floatKefuButtonIcon'><CustomerServiceOutlined /></div></Tooltip>}
+          icon={renderFloatButtonIcon()}
           type="primary"
           shape={btnShape}
-          // style={{ right: 14, bottom: 50 }}
+          style={floatButtonStyle}
           badge={{ count: msgCount, overflowCount: 999 }}
-          // description={btnShape === "square" ? "客服" : ""} //不能用中文
+          // description={btnShape === "square" ? "客服" : ""} //考虑到其它地区，不能用中文
           onClick={onClickButton}
           target="__blank"
           className='floatKefuButton'

@@ -1,11 +1,17 @@
 import { PullMode } from "wukongimjssdk";
 
 export namespace API {
+    export interface KefuInfo {
+        uid: string,
+        name: string,
+        online: boolean
+    }
+
     export interface VisitorLoginResp {
         im_token: string,
         user_uid: string,
         channel_uid: string,
-        kefu_online: boolean
+        kefu_info: KefuInfo,
     }
 
     export interface VisitorLoginReq {

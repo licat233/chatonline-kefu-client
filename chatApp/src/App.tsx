@@ -15,12 +15,13 @@ import chalk from 'chalk';
 import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
 
 export interface AppConf {
-    referer: string;
+    referer: string,
     projectUid: string,
-    OpenChatWindow?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
-    conversionEvent1?: () => void, //用户初次转化事件，由父页面定义
-    conversionEvent2?: () => void, //用户点击发送按钮时的事件，由父页面定义
-    getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义
+    openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义，父页面调用
+    conversionEvent1?: () => void, //用户初次转化事件，由用户自定义，父页面调用
+    conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
+    getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
+    appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
 }
 
 export interface AppProps {
@@ -59,7 +60,11 @@ function App(props: AppProps) {
         im_token: '',
         user_uid: '',
         channel_uid: '',
-        kefu_online: true,
+        kefu_info: {
+            uid: "",
+            name: "Online Customer Service",
+            online: false,
+        },
     });
     const wsAddrs = useRef<string[]>([]);
     const addrUsed = useRef<boolean>(false);
@@ -80,6 +85,7 @@ function App(props: AppProps) {
     const loadRecordCompleted = useRef<boolean>(false);
     const prohibitSend = useRef<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage();
+    const [kefuInfo, setKefuInfo] = useState<API.KefuInfo>(visitorLoginResp.current.kefu_info)
 
     // const info = (msg: string) => {
     //     messageApi.info(msg);
@@ -126,6 +132,11 @@ function App(props: AppProps) {
         }
     }
 
+    //当展示当前窗口时，应该滚动聊天记录到底部
+    const openChatCallback = () => {
+        historyScrollToBottom();
+    }
+    window.LICAT_KEFU.openChatCallback = openChatCallback
     useEffect(() => {
         if (isFirstLoad) {
             historyScrollToBottom();
@@ -138,11 +149,21 @@ function App(props: AppProps) {
         }
         if (!isStartup.current) {
             isStartup.current = true
-            startup()
+            startup().then(ok => {
+                if (ok) {
+                    try {
+                        window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback()
+                    } catch (error) {
+                        if (isDev) {
+                            console.error(error)
+                        }
+                    }
+                }
+            })
         }
 
         initNotification();
-        window.LICAT_KEFU.OpenChatWindow = OpenChatWindow
+
         window.addEventListener('beforeunload', goodbye)
         return () => {
             window.removeEventListener('beforeunload', goodbye)
@@ -150,10 +171,10 @@ function App(props: AppProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const startup = async () => {
-        if (!projectUid) return null;
+    const startup = async (): Promise<boolean> => {
+        if (!projectUid) return false;
         const data = await visitorLogin();
-        if (!data) return;
+        if (!data) return false;
         isLogined.current = true;
         WKSDK.shared().config.uid = visitorLoginResp.current.user_uid; // 用户uid（需要在悟空通讯端注册过）
         WKSDK.shared().config.token = visitorLoginResp.current.im_token; // 用户token （需要在悟空通讯端注册过）
@@ -216,6 +237,7 @@ function App(props: AppProps) {
         setTimeout(() => {
             isFirstLoad = false;
         }, 500)
+        return true
     }
 
     const sendMessageToParent = (messageBody: string) => {
@@ -245,7 +267,6 @@ function App(props: AppProps) {
             } else {
                 chatWebUrl = window.location.href
             }
-            chatWebUrl = addQueryParam(chatWebUrl, { "openChat": "" })
             openUniquePage(chatWebUrl);
         });
         //提示声音
@@ -368,6 +389,7 @@ function App(props: AppProps) {
                 const data = JSON.parse(jsonStr)
                 const info: API.VisitorLoginResp = data as API.VisitorLoginResp
                 visitorLoginResp.current = { ...info };
+                setKefuInfo(visitorLoginResp.current.kefu_info)
                 localStorage.setItem(cacheLoginInfoKey, base64Data);
                 localStorage.setItem(cacheLastLoginTimeKey, date.getTime().toString())
                 return info
@@ -441,7 +463,7 @@ function App(props: AppProps) {
     }
 
     const getAvatarUrl = (msg?: Message) => {
-        const uid = msg?.fromUID
+        const uid = msg?.fromUID || kefuInfo.uid
         if (!uid) return "https://swifttalk-storage.oss-cn-hongkong.aliyuncs.com/icon/contact_blue.png";
         return `${apiURL}/users/${uid}/avatar`
     }
@@ -525,15 +547,9 @@ function App(props: AppProps) {
         return textareaRef.current?.value || ""
     }
 
-    //当展示当前窗口时，应该滚动聊天记录到底部
-    const OpenChatWindow = () => {
-        historyScrollToBottom();
-    }
-
     const conversionEvent = () => {
         try {
-            const cvFn2 = window.parent.LICAT_KEFU?.conversionEvent2
-            cvFn2 && cvFn2()
+            window.parent.LICAT_KEFU?.conversionEvent2 && window.parent.LICAT_KEFU?.conversionEvent2()
             if (isDev) {
                 console.log("run window.conversionEvent2")
             }
@@ -778,7 +794,7 @@ function App(props: AppProps) {
                         <img className="chatfriendlogo" src={getAvatarUrl()} alt="" />
                         {/* <SafetyCertificateTwoTone style={{ color: "#30bd69" }} twoToneColor="#30bd69" className='appicon' /> */}
                         {/* <img src={identifiedsvg} alt="" className='appicon' /> */}
-                        Online customer service</div>
+                        {kefuInfo.name}</div>
                     <div className="chatfriendicon">
                         <Tooltip title={notSupportText} trigger="click">
                             <div className="icon-btn chatfriendseach">

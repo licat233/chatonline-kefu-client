@@ -66,21 +66,41 @@ export function getQueryParamValue(paramName: string): string | null {
     return urlSearchParams.get(paramName);
 }
 
+export function removeQueryParam(url: string, param: string): string {
+    const urlObject = new URL(url);
+    const searchParams = new URLSearchParams(urlObject.search);
+
+    // 删除指定参数
+    searchParams.delete(param);
+
+    // 更新 URL 的查询字符串
+    urlObject.search = searchParams.toString();
+
+    return urlObject.href;
+}
+
 export const getReferer = (): string => {
     const win = window.top
     if (win) return win.location.href;
     return window.location.href
 }
 
+export const markWindow = () => {
+    window.name = window.location.href;
+    // 等待 body 节点加载完成
+    document.addEventListener('DOMContentLoaded', function () {
+        // 创建 <a> 标签
+        var linkElement = document.createElement('a');
+        linkElement.href = window.location.href;
+        linkElement.style.display = 'none';
+        linkElement.style.visibility = 'hidden';
+        document.body.insertAdjacentElement("afterbegin", linkElement);
+    });
+}
+
 export const openUniquePage = (url: string): Window | null => {
-    for (let i = 0; i < window.length; i++) {
-        const win = window[i] as Window & { name: string };
-        if (win.name === url) {
-            win.focus();
-            return win;
-        }
-    }
-    return window.open(url, url);
+    const topWindow = window.top || window;
+    return topWindow.open(url, 'name=' + url);
 };
 
 export const getSupportList = () => {
