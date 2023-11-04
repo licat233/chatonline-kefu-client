@@ -24,12 +24,26 @@
   font-size: 16px;
 }
 
+.floatKefuTipBox {
+  width: 1px;
+  height: 1px;
+  left: 0px;
+  position: absolute;
+  top: 50%;
+}
+
 .floatKefuButton {
   right: 14px;
   bottom: 50px;
 }
 
-.floatKefuButtonIconBox{
+.floatKefuButtonIconBox {
   display: flex;
   justify-content: space-between;
+}
+
+.floatKefuButtonIcon>img {
+  width: 18px;
+  height: 18px;
+  -webkit-user-drag: none;
 }

@@ -357,7 +357,7 @@ export const showNotification = (title: string, options: NotificationOptions | u
             data: {
                 content: options?.body
             }
-        }, "*");
+        }, window.parent.location.href);
     }
     if (!("Notification" in window)) {
         console.log("This browser does not support notification functionality");
@@ -461,7 +461,7 @@ export function playSound(el: HTMLAudioElement | null, src: string) {
 }
 
 //震动
-export function vibrate(pattern?: Iterable<number>) {
+function vibrate(pattern?: Iterable<number>) {
     // 检查浏览器是否支持振动API
     if ("vibrate" in navigator) {
         // 触发手机震动，参数是一个震动模式的数组，可以在数组中指定震动和暂停的持续时间（毫秒）

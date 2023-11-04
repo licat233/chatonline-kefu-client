@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { ConfigProvider, Drawer, FloatButton, Tooltip, message } from 'antd';
-import { CustomerServiceOutlined } from '@ant-design/icons';
+import { CommentOutlined } from '@ant-design/icons';
 import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
-import { IsDev, addQueryParam, getQueryParamValue, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
+import { IsDev, addQueryParam, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
 
@@ -18,6 +18,7 @@ export interface CurrentAppConf {
   newPage?: boolean, //是否打开新页面进行聊天
   shape?: "square" | "circle",  //按钮形状
   btnColor?: string, //按钮颜色
+  btnIcon?: string, //按钮图标url
   tipColor?: string,  //通知卡片颜色
   openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
   conversionEvent1?: () => void, //用户初次转化事件，由用户自定义
@@ -37,9 +38,15 @@ interface AppProps {
   conf: CurrentAppConf
 }
 
+interface unreadMsg {
+  count: number,
+  lastMsg: string,
+}
+
 function App(appProps: AppProps) {
-  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, btnColor, tipColor } = appProps.conf
-  const msgCountCacheKey = "msg_count_" + projectUid;
+  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, btnColor, btnIcon, tipColor } = appProps.conf
+  const unreadMsgCacheKey = "unreadMessages" + projectUid;
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
   const [placement, setPlacement] = useState<'left' | 'right' | 'top' | 'bottom' | undefined>("bottom")
@@ -47,7 +54,6 @@ function App(appProps: AppProps) {
   const [chatWindowSize, setChatWindowSize] = useState<Record<string, string | number | undefined>>({ width: undefined, height: undefined })
   const cvUrl = useRef("")
   const [messageApi, contextHolder] = message.useMessage();
-  const [msgTip, setMsgTip] = useState({ open: false, title: "" });
   const firstLoaded = useRef(false)
   const loadSuccess = useRef(false)
   const firstOpenChat = useRef(false)
@@ -81,19 +87,27 @@ function App(appProps: AppProps) {
     });
   };
 
-  const getUnreadMsgCountCache = (): number => {
-    const value = localStorage.getItem(msgCountCacheKey)
+  const getUnreadMsgCache = (): unreadMsg => {
+    const value = localStorage.getItem(unreadMsgCacheKey)
     if (value) {
-      const num = parseInt(value);
+      const data = JSON.parse(value) as unreadMsg
+      const num = data.count;
       if (!isNaN(num)) {
-        return num
+        return data
       }
     }
-    localStorage.removeItem(msgCountCacheKey)
-    return 0
+    localStorage.removeItem(unreadMsgCacheKey)
+    return { count: 0, lastMsg: "" }
   }
 
-  const [msgCount, setMsgCount] = useState(getUnreadMsgCountCache());
+  const [unreadMessage, setUnreadMessage] = useState<unreadMsg>(getUnreadMsgCache());
+
+  const autoOpenChatWindow = () => {
+    //如果有未读消息，则显示，并且是通过消息点击进来的，即window.name=href
+    if (unreadMessage.count > 0 && window.name === window.location.href) {
+      switchChatWindow(true)
+    }
+  }
 
   const getChatLink = (): string => {
     if (!projectUid) {
@@ -150,7 +164,7 @@ function App(appProps: AppProps) {
 
   const afterOpenChange = () => {
     if (!openChatWindow) return
-    localStorage.removeItem(msgCountCacheKey)
+    localStorage.removeItem(unreadMsgCacheKey)
     const openFn = iframeRef.current?.contentWindow?.LICAT_KEFU?.openChatCallback
     openFn && openFn()
   }
@@ -185,9 +199,8 @@ function App(appProps: AppProps) {
   }
 
   const clearUnreadMsg = () => {
-    setMsgCount(0)
-    setMsgTip({ open: false, title: "" });
-    localStorage.removeItem(msgCountCacheKey);
+    setUnreadMessage({ count: 0, lastMsg: "" })
+    localStorage.removeItem(unreadMsgCacheKey);
   }
 
   const conversionEvent = () => {
@@ -247,14 +260,15 @@ function App(appProps: AppProps) {
     //判断当前窗口是否是打开状态，如果是打开状态，则不用通知
     if (openChatWindow) return;
     //加入未读消息列表
-    const unreadMsgCount = msgCount + 1
-    setMsgCount(unreadMsgCount)
-    setMsgTip({ open: true, title: content });
-    localStorage.setItem(msgCountCacheKey, unreadMsgCount + "")
+    unreadMessage.count = unreadMessage.count + 1
+    unreadMessage.lastMsg = content
+    setUnreadMessage({ ...unreadMessage });
+    localStorage.setItem(unreadMsgCacheKey, JSON.stringify(unreadMessage))
   }
 
   const receiveMessage = (event: MessageEvent) => {
-    const { data } = event
+    const { data, origin } = event
+    if (origin !== window.location.origin) return
     if (typeof data === 'object' && data.source === 'chatIframe') {
       notifyMessage(data.message)
     }
@@ -320,18 +334,15 @@ function App(appProps: AppProps) {
           iframeInsertContent(content);
           //加载draw
           loadSuccess.current = true
-          //如果有未读消息，则显示
-          if (msgCount > 0) {
-            switchChatWindow(true)
-          }
+          autoOpenChatWindow()
 
-          //如果是pc端，5秒钟后自动弹出聊天窗口
+          //如果是pc端，10秒钟后自动弹出聊天窗口
           if (isDesktopUA() && window.innerWidth > 768) {
             setTimeout(() => {
               if (firstOpenChat.current) return
               firstOpenChat.current = true
               switchChatWindow(true)
-            }, 5000)
+            }, 10000)
           }
         })
         .catch((err: any) => {
@@ -348,10 +359,7 @@ function App(appProps: AppProps) {
 
   const handleVisibilityChange = () => {
     if (!document.hidden) {
-      //如果有未读消息，则显示
-      if (msgCount > 0) {
-        switchChatWindow(true)
-      }
+      autoOpenChatWindow()
     }
   }
 
@@ -426,19 +434,20 @@ function App(appProps: AppProps) {
   }
 
   const renderFloatButtonIcon = () => {
+    const iconE = btnIcon ? <img src={btnIcon} alt='chat' /> : <CommentOutlined />
     return <div className='floatKefuButtonIconBox'>
       <div>
         <Tooltip
-          placement="topLeft"
+          placement="left"
           color={tipColor}
-          open={msgTip.open}
-          arrow={false}
+          open={unreadMessage.count > 0}
+          arrow={true}
           zIndex={899}
-          title={msgTip.title}>
-          <div style={{ width: "1px", height: "1px" }}></div>
+          title={unreadMessage.lastMsg}>
+          <div className='floatKefuTipBox'></div>
         </Tooltip>
       </div>
-      <div className='floatKefuButtonIcon'><CustomerServiceOutlined /></div>
+      <div className='floatKefuButtonIcon'>{iconE}</div>
     </div>
   }
 
@@ -452,8 +461,7 @@ function App(appProps: AppProps) {
           type="primary"
           shape={btnShape}
           style={floatButtonStyle}
-          badge={{ count: msgCount, overflowCount: 999 }}
-          // description={btnShape === "square" ? "客服" : ""} //考虑到其它地区，不能用中文
+          badge={{ count: unreadMessage.count, overflowCount: 999 }}
           onClick={onClickButton}
           target="__blank"
           className='floatKefuButton'

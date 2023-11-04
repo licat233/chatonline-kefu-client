@@ -24,7 +24,8 @@ const defaultConfig: CurrentAppConf = {
   newPage: false,
   shape: "circle", //默认为circle
   btnColor: '#00b96b', //按钮颜色
-  tipColor: "geekblue",  //通知卡片颜色
+  btnIcon: "", //按钮图标url
+  tipColor: "blue",  //通知卡片颜色
   conversionEvent1: () => { }, //用户初次转化事件，由父页面定义
   conversionEvent2: () => { }, //用户点击发送按钮时的事件，由父页面定义
 }

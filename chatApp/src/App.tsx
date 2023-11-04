@@ -3,7 +3,7 @@ import './App.css';
 
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions } from "wukongimjssdk"
 import { Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, addQueryParam, openUniquePage, vibrate, IsDev, goodbye } from './utils/utils';
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
@@ -271,8 +271,8 @@ function App(props: AppProps) {
         });
         //提示声音
         alertSound();
-        //震动一下
-        vibrate();
+        //震动一下，没有权限
+        // vibrate();
     }
 
     const syncMessageCallback = async (channel: Channel, opts: SyncOptions): Promise<Message[]> => {
