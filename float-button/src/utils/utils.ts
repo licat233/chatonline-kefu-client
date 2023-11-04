@@ -134,3 +134,19 @@ export const IsDev = (): boolean => {
     const isDev = process.env.NODE_ENV === 'development' || getQueryParamValue("dev") !== null;
     return isDev;
 }
+
+export function isDesktopDevice(platform: string = window.navigator.platform): boolean {
+    // 将 platform 转换为小写，以便进行比较
+    platform = platform.toLowerCase();
+
+    // 判断是否为电脑设备
+    if (
+        platform.indexOf('win') !== -1 ||
+        platform.indexOf('mac') !== -1 ||
+        (platform.indexOf('linux') !== -1 && platform.indexOf('arm') === -1)
+    ) {
+        return true;
+    }
+
+    return false;
+}

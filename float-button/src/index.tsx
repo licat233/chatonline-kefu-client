@@ -5,7 +5,7 @@ import App, { CurrentAppConf } from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
-import { IsDev, getReferer } from './utils/utils';
+import { IsDev, getReferer, isDesktopDevice, isDesktopUA } from './utils/utils';
 
 declare global {
   interface Window {
@@ -100,6 +100,10 @@ const initConf = (): CurrentAppConf | undefined => {
 }
 
 const startup = () => {
+  if (!isDev && isDesktopDevice() !== isDesktopUA()) {
+    return
+  }
+
   //检查配置
   const config = initConf();
   if (!config) {

@@ -38,4 +38,10 @@ export namespace API {
         more: number,
         messages: RecvPacket[]
     }
+
+    export interface PostMessage {
+        content: string,
+        source?: string,
+        type?: "message" | "tip",
+    }
 }

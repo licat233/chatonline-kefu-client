@@ -243,7 +243,12 @@ function App(props: AppProps) {
     const sendMessageToParent = (messageBody: string) => {
         const parentUrl = window.top?.location.href
         if (!parentUrl) return
-        window.parent.postMessage({ "source": "chatIframe", "message": messageBody }); // 这里需要根据实际情况设置目标 origin
+        const msg: API.PostMessage = {
+            content: messageBody,
+            source: "chatOnlineApp",
+            type: "message",
+        }
+        window.parent.postMessage(msg); // 这里需要根据实际情况设置目标 origin
     };
 
     const notifyMessage = (message: Message) => {

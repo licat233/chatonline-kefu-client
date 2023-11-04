@@ -1,17 +1,28 @@
 (() => {
-    let getCurrentDirectory = (href) => {
-        let currentPath = href;
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+        return
+    }
+
+    interface config {
+        css: string,
+        js: string,
+        source: string,
+    }
+
+    const win = window as any
+
+    let getCurrentDirectory = (currentPath: string) => {
         let directoryPath = currentPath.replace(/\/[^/]*$/, '');
         return directoryPath
     }
 
-    let joinUrlParts = (...parts) => {
+    let joinUrlParts = (...parts: string[]) => {
         parts = parts.filter(part => {
             part = ((part ?? "") + "").trim()
             part = part.replace(/^\.+/g, "")
             return part.length !== 0
         })
-        let filterParts = []
+        let filterParts: string[] = [];
         parts.forEach((part, index) => {
             part = ((part ?? "") + "").trim().replace(/^\.+|\.+$/g, "")
             if (part.length === 0) return
@@ -27,9 +38,9 @@
         return filterParts.join("/");
     }
 
-    let installKefuScript = (config) => {
-        let source = ((config.source ?? "") + "").trim()
-        let css = ((config.css ?? "") + "").trim()
+    let installKefuScript = (conf: config) => {
+        let source = ((conf.source ?? "") + "").trim()
+        let css = ((conf.css ?? "") + "").trim()
         if (css) {
             let lE = document.createElement("link");
             lE.rel = "stylesheet";
@@ -39,7 +50,7 @@
             lE.href = css;
             document.head.insertAdjacentElement("beforeend", lE);
         }
-        let js = ((config.js ?? "") + "").trim();
+        let js = ((conf.js ?? "") + "").trim();
         if (js) {
             let sE = document.createElement("script");
             if (!(js + "").startsWith("http") || !js.startsWith("//")) {
@@ -50,7 +61,7 @@
         }
     }
 
-    let readJsonConfig = (jsonUrl, callback) => {
+    let readJsonConfig = (jsonUrl: string, callback: (arg0: any) => void) => {
         fetch(jsonUrl)
             .then(function (response) {
                 if (!response.ok) {
@@ -59,7 +70,6 @@
                 return response.json();
             })
             .then(function (jsonContent) {
-                // 在这里处理jsonContent变量中的内容
                 callback(jsonContent)
             })
             .catch(function (error) {
@@ -67,43 +77,45 @@
             });
     }
 
-    let run = (config) => {
-        if (!window.LICAT_KEFU) {
+    let run = (conf: config) => {
+        if (!win.LICAT_KEFU) {
             window.document.body.addEventListener("load", () => {
-                installKefuScript(config)
+                installKefuScript(conf)
             })
         } else {
-            installKefuScript(config)
+            installKefuScript(conf)
         }
     }
 
-
-    let currentScript = document.currentScript;
+    let currentScript = window.document.currentScript as HTMLScriptElement;
+    if (!currentScript) {
+        return
+    }
     let baseUrl = getCurrentDirectory(currentScript.src);
-    let readJsonCallback = (jsonContent) => {
-        let css = jsonContent.files["main.css"];
-        let js = jsonContent.files["main.js"];
-        let config = {
-            source: source || baseUrl,
-            css: css,
-            js: js,
-        }
-        run(config)
-    }
-
     let cssFilename = currentScript.dataset["css"];
     let jsFilename = currentScript.dataset["js"];
     let source = currentScript.dataset["source"];
+
     if (cssFilename && jsFilename) {
-        let config = {
+        let conf: config = {
             source: source || baseUrl,
             css: cssFilename,
             js: jsFilename,
         }
-        run(config)
+        run(conf)
         return
     } else {
         let jsonUrl = joinUrlParts(baseUrl, "asset-manifest.json");
+        let readJsonCallback = (jsonContent: any) => {
+            let css = jsonContent.files["main.css"];
+            let js = jsonContent.files["main.js"];
+            let conf: config = {
+                source: source || baseUrl,
+                css: css,
+                js: js,
+            }
+            run(conf)
+        }
         readJsonConfig(jsonUrl, readJsonCallback)
         return
     }

@@ -6,6 +6,7 @@ import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
 import { IsDev, addQueryParam, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
+import API from "./AppType";
 
 const isDev = IsDev()
 
@@ -269,9 +270,10 @@ function App(appProps: AppProps) {
   const receiveMessage = (event: MessageEvent) => {
     const { data, origin } = event
     if (origin !== window.location.origin) return
-    if (typeof data === 'object' && data.source === 'chatIframe') {
-      notifyMessage(data.message)
-    }
+    const msg = data as API.PostMessage
+    if (msg.source !== "chatOnlineApp") return
+    if (!msg.content) return
+    notifyMessage(msg.content)
   };
 
   const iframeInsertContent = (content: string): boolean => {
