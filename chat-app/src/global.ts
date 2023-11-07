@@ -1,4 +1,4 @@
-import { PullMode } from "wukongimjssdk";
+import { PullMode, RecvPacket } from "wukongimjssdk";
 
 export namespace API {
     export interface KefuInfo {
@@ -43,5 +43,26 @@ export namespace API {
         content: string,
         source?: string,
         type?: "message" | "tip",
+    }
+}
+
+export interface AppConf {
+    referer: string,
+    projectUid: string,
+    openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义，父页面调用
+    conversionEvent1?: () => void, //用户初次转化事件，由用户自定义，父页面调用
+    conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
+    getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
+    appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
+}
+
+export interface AppProps {
+    conf: AppConf
+    apiURL: string,
+}
+
+declare global {
+    interface Window {
+        LICAT_KEFU: AppConf,
     }
 }

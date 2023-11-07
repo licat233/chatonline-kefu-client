@@ -1,24 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App, { CurrentAppConf } from './App';
+import App from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
 import { IsDev, getReferer, isDesktopDevice, isDesktopUA } from './utils/utils';
-
-declare global {
-  interface Window {
-    LICAT_KEFU: CurrentAppConf,
-  }
-}
+import { CurrentAppConf } from './global';
 
 const isDev = IsDev()
 
 const defaultConfig: CurrentAppConf = {
   slogan: "",
   projectUid: "",
-  chatUrl: 'https://www.24online.site/',
+  chatUrl: window.location.protocol + '//www.24online.site/',
   cvUrls: [],
   useChat: true,
   newPage: false,

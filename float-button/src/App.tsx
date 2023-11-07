@@ -6,48 +6,14 @@ import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
 import { IsDev, addQueryParam, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
-import API from "./AppType";
+import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./global";
 
 const isDev = IsDev()
 
-export interface CurrentAppConf {
-  slogan?: string, //口号
-  projectUid?: string, //项目uid
-  chatUrl?: string, //聊天页面所在url
-  cvUrls?: string[], //转化链接
-  useChat?: boolean, //是否使用聊天功能
-  newPage?: boolean, //是否打开新页面进行聊天
-  shape?: "square" | "circle",  //按钮形状
-  btnColor?: string, //按钮颜色
-  btnIcon?: string, //按钮图标url
-  tipColor?: string,  //通知卡片颜色
-  openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
-  conversionEvent1?: () => void, //用户初次转化事件，由用户自定义
-  conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
-  getChatAppConf?: () => ChatAppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
-  appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
-  //example
-  example?: CurrentAppConf,
-}
-
-export interface ChatAppConf {
-  referer: string;
-  projectUid: string,
-}
-
-interface AppProps {
-  conf: CurrentAppConf
-}
-
-interface unreadMsg {
-  count: number,
-  lastMsg: string,
-}
 
 function App(appProps: AppProps) {
   const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, btnColor, btnIcon, tipColor } = appProps.conf
   const unreadMsgCacheKey = "unreadMessages" + projectUid;
-
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
   const [placement, setPlacement] = useState<'left' | 'right' | 'top' | 'bottom' | undefined>("bottom")
@@ -58,6 +24,7 @@ function App(appProps: AppProps) {
   const firstLoaded = useRef(false)
   const loadSuccess = useRef(false)
   const firstOpenChat = useRef(false)
+  const [iframeHtml, setIframeHtml] = useState<string>()
 
   const [floatButtonStyle, setFloatButtonStyle] = useState<React.CSSProperties>({ display: useChat && !newPage ? "none" : "" })
 
@@ -156,11 +123,8 @@ function App(appProps: AppProps) {
     if (!firstOpenChat.current) {
       firstOpenChat.current = true
     }
-    if (open) {
-      setOpenChatWindow(true);
-      return
-    }
-    setOpenChatWindow(!openChatWindow)
+    open = open ?? !openChatWindow
+    setOpenChatWindow(open)
   };
 
   const afterOpenChange = () => {
@@ -270,14 +234,14 @@ function App(appProps: AppProps) {
   const receiveMessage = (event: MessageEvent) => {
     const { data, origin } = event
     if (origin !== window.location.origin) return
-    const msg = data as API.PostMessage
+    const msg = data as PostMessage
     if (msg.source !== "chatOnlineApp") return
     if (!msg.content) return
     notifyMessage(msg.content)
   };
 
   const iframeInsertContent = (content: string): boolean => {
-    if (content && iframeRef.current && chatUrl) {
+    if (content && chatUrl) {
       const parser = new DOMParser();
       const webDoc = parser.parseFromString(content, 'text/html');
       const htmlElement = webDoc.documentElement;
@@ -291,20 +255,8 @@ function App(appProps: AppProps) {
         baseE.href = baseHref
         headE.insertAdjacentElement("afterbegin", baseE);
       }
-      const headlerContent = headE.outerHTML
-      const bodyE = htmlElement.querySelector("body");
-      if (!bodyE) {
-        return false;
-      }
-      const bodyContent = bodyE.outerHTML
-      const allContent = headlerContent + bodyContent
-      const doc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
-      if (doc) {
-        doc.open();
-        doc.write(allContent);
-        doc.close();
-        return true
-      }
+      setIframeHtml("<!DOCTYPE html>" + htmlElement.outerHTML)
+      return true
     }
     return false
   }
@@ -404,7 +356,7 @@ function App(appProps: AppProps) {
   };
 
   const renderChatWindow = () => {
-    if (!useChat || newPage) return <></>;
+    if (!useChat || newPage || !iframeHtml) return <></>;
     const allowList = getSupportList();
     return (
       <Drawer
@@ -429,7 +381,7 @@ function App(appProps: AppProps) {
           allow={allowList}
           title='chatonline'
           id={"chatIframe-" + projectUid}
-        // src={chatPageUrl.current}
+          srcDoc={iframeHtml}
         />
       </Drawer>
     )

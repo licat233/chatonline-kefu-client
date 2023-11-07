@@ -3,21 +3,16 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import { IsDev, getQueryParamValue, isDesktopDevice, isDesktopUA, isIframe } from './utils/utils';
-import App, { AppConf } from "./App";
+import App  from "./App";
 import { decryptString, encryptString } from './utils/crypto';
 import { ConfigProvider } from 'antd';
+import { AppConf } from './global';
 
-declare global {
-  interface Window {
-    LICAT_KEFU: AppConf,
-  }
-}
 
 const isDev = IsDev();
 
 //后缀不要加/
-const apiURL = window.location.protocol + "//api.im.mixbench.net/v1"
-
+const apiURL = window.parent.location.protocol + "//api.im.mixbench.net/v1"
 //从url中读取配置
 const getConfFromUrl = (): AppConf | undefined => {
   const paramsStr = getQueryParamValue("licat")
@@ -86,7 +81,7 @@ const startup = () => {
 
   window.LICAT_KEFU = Object.assign(window.LICAT_KEFU || {}, conf);
 
-  const rootId = "root" + Date.now()
+  const rootId = "root"
   let rootE = window.document.getElementById(rootId);
   if (!rootE) {
     rootE = document.createElement("div");

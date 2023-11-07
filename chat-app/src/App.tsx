@@ -1,33 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
-import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions } from "wukongimjssdk"
-import { Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye } from './utils/utils';
+import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions, Message } from "wukongimjssdk"
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
 import { Button, Image, Popover, Spin, Tooltip, message } from "antd";
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
-import { API } from './apitypes';
+import { API, AppProps } from './global';
 import chalk from 'chalk';
 import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
-
-export interface AppConf {
-    referer: string,
-    projectUid: string,
-    openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义，父页面调用
-    conversionEvent1?: () => void, //用户初次转化事件，由用户自定义，父页面调用
-    conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
-    getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
-    appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
-}
-
-export interface AppProps {
-    conf: AppConf
-    apiURL: string,
-}
 
 const isDev = IsDev()
 let isFirstLoad = true
@@ -37,9 +21,10 @@ function App(props: AppProps) {
     const apiURL = props.apiURL
     const useCache = false;
     const channelType = ChannelTypeGroup;
-    const cacheLoginInfoKey = "info-" + projectUid; //防止多个项目之间的数据混淆
-    const cacheLastLoginTimeKey = "visitorLastLoginAt-" + projectUid
-    const cacheMessagesKey = "messages-" + projectUid;
+    const keyPrefix = "chatonline-" + projectUid + "-"
+    const cacheLoginInfoKey = keyPrefix + "info"; //防止多个项目之间的数据混淆
+    const cacheLastLoginTimeKey = keyPrefix + "visitorLastLoginTime"
+    const cacheMessagesKey = keyPrefix + "messages";
     const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
     const maxInputLength = 800;
     const isChildrenIframe = isIframe()
@@ -69,6 +54,7 @@ function App(props: AppProps) {
     const wsAddrs = useRef<string[]>([]);
     const addrUsed = useRef<boolean>(false);
     const isStartup = useRef<boolean>(false);
+    const isStartuped = useRef<boolean>(false);
     const syncMessagesResp = useRef<API.SyncMessagesResp>({
         start_message_seq: 0,
         end_message_seq: 0,
@@ -86,10 +72,6 @@ function App(props: AppProps) {
     const prohibitSend = useRef<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage();
     const [kefuInfo, setKefuInfo] = useState<API.KefuInfo>(visitorLoginResp.current.kefu_info)
-
-    // const info = (msg: string) => {
-    //     messageApi.info(msg);
-    // };
 
     const success = (msg: string) => {
         messageApi.open({
@@ -151,6 +133,7 @@ function App(props: AppProps) {
             isStartup.current = true
             startup().then(ok => {
                 if (ok) {
+                    isStartuped.current = true
                     try {
                         window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback()
                     } catch (error) {
@@ -220,7 +203,6 @@ function App(props: AppProps) {
             //缓存至本地: 1.先读取，再写入
             saveCacheMessages(messageStore);
             //消息提醒
-            // messageNotification(message);
             if (!isMsgFromSelf(message)) {
                 notifyMessage(message);
             }
@@ -230,6 +212,7 @@ function App(props: AppProps) {
         // 提供频道内消息同步的数据源
         WKSDK.shared().config.provider.syncMessagesCallback = syncMessageCallback
 
+        isStartuped.current = true
         //开始加载聊天记录
         setLoading(true);
         await loadChatRecord();
@@ -260,7 +243,7 @@ function App(props: AppProps) {
         }
         showNotification("New message", {
             body: replaceHtml(body),
-            icon: getAvatarUrl(message)
+            icon: getAvatarUrl()
         }, function () {
             window.focus();
             this.close();
@@ -269,8 +252,6 @@ function App(props: AppProps) {
             if (isChildrenIframe) {
                 //打开父页面
                 chatWebUrl = referer
-            } else {
-                chatWebUrl = window.location.href
             }
             openUniquePage(chatWebUrl);
         });
@@ -312,6 +293,7 @@ function App(props: AppProps) {
 
     //加载聊天记录
     const loadChatRecord = async () => {
+        if (!isStartuped.current) return
         if (loadRecordCompleted.current) return;
         // 获取某个频道的历史消息
         const messages = await WKSDK.shared().chatManager.syncMessages(newChannel(), {
@@ -326,15 +308,12 @@ function App(props: AppProps) {
             loadRecordCompleted.current = true;
             return
         }
-        messageStore.push(...messages);
-        setMessageStore([...messageStore]);
+        setMessageStore([...messages, ...messageStore]);
     }
 
     //加载更多聊天记录
     const loadMoreChatRecord = async (e: React.UIEvent<HTMLElement, UIEvent>) => {
-        if (loadRecordCompleted.current || loading) return;
-        //如果不处于顶部，则不加载聊天记录
-        if (e.currentTarget.scrollTop !== 0) return;
+        if (loadRecordCompleted.current || loading || e.currentTarget.scrollTop !== 0) return;
         //显示加载中...
         setLoading(true);
         //在下一次渲染完成后
@@ -467,8 +446,8 @@ function App(props: AppProps) {
         localStorage.setItem(cacheMessagesKey, messagesText);
     }
 
-    const getAvatarUrl = (msg?: Message) => {
-        const uid = msg?.fromUID || kefuInfo.uid
+    const getAvatarUrl = (uid?: string) => {
+        uid = uid ?? visitorLoginResp.current.kefu_info.uid
         if (!uid) return "https://swifttalk-storage.oss-cn-hongkong.aliyuncs.com/icon/contact_blue.png";
         return `${apiURL}/users/${uid}/avatar`
     }
@@ -571,6 +550,7 @@ function App(props: AppProps) {
             warning("Detected abnormal operation, current operation has been disabled!")
             return
         }
+        if (!isStartuped.current) return
         let text = getInputContext();
         if (text.length === 0) {
             return;
@@ -666,31 +646,6 @@ function App(props: AppProps) {
     //   return window.innerWidth || document.documentElement.clientWidth;
     // }
 
-    const getMessageType = (msg: Message): number => {
-        return (msg.content?.realContentType || msg.content?._contentType || msg.content?.contentObj?.type) ?? 1
-    }
-
-    const getMessageNotifyContent = (msg: Message): string => {
-        const contentType = getMessageType(msg)
-        switch (contentType) {
-            case 1:
-                //默认为文本消息
-                const text = msg.content.text || msg.content?.contentObj?.content
-                if (typeof text !== "string") {
-                    return ""
-                }
-                return text.trim()
-            case 2:
-                //图片消息
-                let url = msg.content?.contentObj?.url
-                if (!url) return ""
-                return "[Image]"
-            default:
-                //其它类型消息，暂不支持
-                return ""
-        }
-    }
-
     const verifyMsg = (msg: Message) => {
         //没有发送人
         if (!msg.fromUID) return false
@@ -749,7 +704,8 @@ function App(props: AppProps) {
     }
 
     const formatMessageTime = (msg: Message): string => {
-        return dayjs(msg.timestamp * 1000).format("HH:mm")
+        const timestamp = convertGoTimestamp(msg.timestamp)
+        return dayjs(timestamp).format("HH:mm")
     }
 
     const getMessageTextare = (msg: Message): string => {
@@ -834,10 +790,11 @@ function App(props: AppProps) {
         const isSelf = isMsgFromSelf(msg)
         switch (msgType) {
             case 1: //文本消息
+                let contentElement = <div className='none-select'>{content}</div>
                 if (!isSelf) {
                     content = addAnchorTagsToUrls(content)
+                    contentElement = <div className='none-select htmltext' dangerouslySetInnerHTML={{ __html: content }} />
                 }
-                const contentElement = isSelf ? (<div className='none-select'>{content}</div>) : (<div className='none-select' dangerouslySetInnerHTML={{ __html: content }} />)
                 const viewCardMenu = (<div className='cardtools'>
                     <Button type="dashed" className='cardtools-btn' onClick={() => { copyElementText(content, !isSelf) }}>Copy</Button>
                 </div>)
@@ -874,7 +831,7 @@ function App(props: AppProps) {
 
     const viewFriendCard = (msg: Message) => {
         const msgTime = formatMessageTime(msg)
-        const avatarUrl = getAvatarUrl(msg)
+        const avatarUrl = getAvatarUrl()
         return (
             <div className="friendchatcard">
                 <div className="chatavatar">

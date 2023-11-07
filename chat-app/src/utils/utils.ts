@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import getUrls from 'get-urls';
+import { Message } from "wukongimjssdk";
 
 export function goodbye(this: Window, ev: BeforeUnloadEvent) {
     // ev.returnValue = "Are you sure to leave the current page？...";
@@ -404,7 +404,7 @@ export const newUuid = () => {
     let s4 = function () {
         return (65536 * (1 + Math.random()) | 0).toString(16).substring(1);
     }
-    return (s4() + s4() + "-" + s4() + "-4" + s4().substr(0, 3) + "-" + s4() + "-" + s4() + s4() + s4())
+    return (s4() + s4() + "-" + s4() + "-4" + s4().substring(0, 3) + "-" + s4() + "-" + s4() + s4() + s4())
         .toLowerCase();
 }
 
@@ -461,7 +461,7 @@ export function playSound(el: HTMLAudioElement | null, src: string) {
 }
 
 //震动
-function vibrate(pattern?: Iterable<number>) {
+export function vibrate(pattern?: Iterable<number>) {
     // 检查浏览器是否支持振动API
     if ("vibrate" in navigator) {
         // 触发手机震动，参数是一个震动模式的数组，可以在数组中指定震动和暂停的持续时间（毫秒）
@@ -578,22 +578,17 @@ export function calculateMaxChars(element: HTMLElement) {
     return maxChars;
 }
 
+function hasAnchorTag(htmlString: string): boolean {
+    const regex = /<a\b[^>]*>/i;
+    return regex.test(htmlString);
+}
+
 //给url加上a标签
 export function addAnchorTagsToUrls(inputText: string): string {
-    const urls = getUrls(inputText)
-    if (!urls || urls.size === 0) {
-        return inputText;
-    }
-    let result = inputText;
-    urls.forEach((url) => {
-        const link = `<a href="${url}" target="_blank">${url}</a>`;
-        // const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        // result = result.replace(url, '<a href="$&" target="_blank">$&</a>')
-        // const urlPattern = new RegExp(`([^>]${url}(?!(</a>)))`, 'g');
-        result = result.replace(url, link);
-    })
-
-    return result;
+    //如果存在a标签，则不操作
+    if (hasAnchorTag(inputText)) return inputText
+    const urlRegex = /(((https?)?:)?\/\/[^\s\u4E00-\u9FFF]+)/g;
+    return inputText.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
 }
 
 export const getReferer = (): string => {
@@ -686,4 +681,42 @@ export const openUniquePage = (url: string): Window | null => {
 export const IsDev = (): boolean => {
     const isDev = process.env.NODE_ENV === 'development' || getQueryParamValue("dev") !== null;
     return isDev;
+}
+
+export const getMessageType = (msg: Message): number => {
+    return (msg.content?.realContentType || msg.content?._contentType || msg.content?.contentObj?.type) ?? 1
+}
+
+export const getMessageNotifyContent = (msg: Message): string => {
+    const contentType = getMessageType(msg)
+    switch (contentType) {
+        case 1:
+            //默认为文本消息
+            const text = msg.content.text || msg.content?.contentObj?.content
+            if (typeof text !== "string") {
+                return ""
+            }
+            return text.trim()
+        case 2:
+            //图片消息
+            let url = msg.content?.contentObj?.url
+            if (!url) return ""
+            return "[Image]"
+        default:
+            //其它类型消息，暂不支持
+            return ""
+    }
+}
+
+export function convertGoTimestamp(goTimestamp: number): number {
+    if (goTimestamp.toString().length === 13) {
+        // 如果长度已经是13位，则说明已经是毫秒级时间戳，直接返回
+        return goTimestamp;
+    } else if (goTimestamp.toString().length === 10) {
+        // 如果长度是10位，则说明是秒级时间戳，需要转换为毫秒级
+        return goTimestamp * 1000;
+    } else {
+        // 其他情况视为无效时间戳，返回 NaN 或抛出异常，具体根据需求而定
+        return NaN;
+    }
 }
