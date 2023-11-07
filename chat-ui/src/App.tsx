@@ -526,8 +526,6 @@ const App = (props: AppProps) => {
     return joinPath(apiURL, path)
   }
 
-
-
   const convertToUIMssage = (wkMsg: WkMessage): UiMessage => {
     const msgType = getMessageType(wkMsg)
     const isSelf = isMsgFromSelf(wkMsg)

@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
-import { IsDev, getQueryParamValue, isDesktopDevice, isDesktopUA, isIframe } from './utils/utils';
-import App  from "./App";
+import { IsDev, getQueryParamValue, isDesktopDevice, isDesktopUA, isIframe, isMockDevice } from './utils/utils';
+import App from "./App";
 import { decryptString, encryptString } from './utils/crypto';
 import { ConfigProvider } from 'antd';
 import { AppConf } from './global';
@@ -54,7 +54,8 @@ const getConfFromLocal = (): AppConf | undefined => {
 }
 
 const startup = () => {
-  if (!isDev && isDesktopDevice() !== isDesktopUA()) {
+  //主要用于防止某些人使用电脑进行伪装访问
+  if (!isDev && isMockDevice()) {
     return
   }
 
