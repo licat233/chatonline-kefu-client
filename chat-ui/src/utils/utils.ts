@@ -751,3 +751,16 @@ export function convertGoTimestamp(goTimestamp: number): number {
         return NaN;
     }
 }
+
+export function getDateMonthsAgo(monthsAgo: number): Date {
+    const currentDate: Date = new Date();
+    const targetDate: Date = new Date(currentDate.getFullYear(), currentDate.getMonth() - monthsAgo, currentDate.getDate());
+    return targetDate;
+}
+
+export function getHoursFromTimeToNow(targetTime: Date = new Date()): number {
+    const currentTime: Date = new Date();
+    const timeDiffInMilliseconds: number = currentTime.getTime() - targetTime.getTime();
+    const hoursDiff: number = Math.floor(timeDiffInMilliseconds / (1000 * 60 * 60));
+    return hoursDiff;
+}

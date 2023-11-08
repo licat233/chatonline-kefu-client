@@ -2,7 +2,7 @@ import Chat, { Bubble, Button, CardActions, CardContent, CardMedia, CardText, Ca
 import type { NavbarProps, QuickReplyItemProps, MessageProps as UiMessage } from '@chatui/core';
 import '@chatui/core/dist/index.css';
 import { API, AppProps } from './global';
-import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, isIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, parseMessageContent, playSound, replaceHtml, showNotification, trim } from './utils/utils';
+import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getDateMonthsAgo, getHoursFromTimeToNow, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, isIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, parseMessageContent, playSound, replaceHtml, showNotification, trim } from './utils/utils';
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, Message as WkMessage, MessageText, PullMode, SyncOptions } from 'wukongimjssdk';
 import { useEffect, useRef, useState } from 'react';
 import { decryptJSONString, encryptData } from './utils/crypto';
@@ -15,6 +15,7 @@ import { EnvironmentFilled, EnvironmentOutlined, SafetyCertificateFilled, Safety
 import { MessageContainerHandle } from '@chatui/core/lib/components/MessageContainer';
 import { ComposerHandle } from '@chatui/core/lib/components/Composer';
 import { ScrollToEndOptions } from '@chatui/core/lib/components/PullToRefresh';
+import dayjs from 'dayjs';
 // import "animate.css";
 
 const isDev = IsDev()
@@ -52,6 +53,7 @@ const App = (props: AppProps) => {
   const chatMessageAudioRef = useRef<HTMLAudioElement>(null);
   const chatMessageSendAudioRef = useRef<HTMLAudioElement>(null);
   const autoCloseSecond = 9;
+  const stopAutoCloseSummary = useRef<boolean>(false)
 
   const [noticeContent, setNoticeContent] = useState("");
   const getAvatarUrl = (uid?: string) => {
@@ -84,6 +86,7 @@ const App = (props: AppProps) => {
   const switchShowSummary = (open?: boolean) => {
     open = open ?? !showSummary
     if (open && !showSummary) {
+      stopAutoCloseSummary.current = true
       setAutoCloseDuration(autoCloseSecond)
     }
     setShowSummary(open)
@@ -765,24 +768,28 @@ const App = (props: AppProps) => {
         </Bubble>
     }
   }
+
   const [autoCloseDuration, setAutoCloseDuration] = useState<number>(autoCloseSecond)
   const autoCloseTimer = useRef<any>()
   const renderSummary = () => {
     if (!showSummary) return <></>
-    // const contactKefu = () => {
-    //   switchShowSummary(false);
-    //   const msg = newUIMessage("text", { text: "你好，我有問題需要諮詢" }, "right")
-    //   appendMsg(msg)
-    // }
-    clearInterval(autoCloseTimer.current)
-    autoCloseTimer.current = setInterval(() => {
-      if (autoCloseDuration <= 0) {
-        switchShowSummary(false);
-        clearInterval(autoCloseTimer.current)
-        return
-      }
-      setAutoCloseDuration(autoCloseDuration - 1)
-    }, 1000)
+    if (!stopAutoCloseSummary.current) {
+      autoCloseTimer.current && clearInterval(autoCloseTimer.current);
+      autoCloseTimer.current = setInterval(() => {
+        if (stopAutoCloseSummary.current) {
+          clearInterval(autoCloseTimer.current);
+          return
+        }
+        if (autoCloseDuration <= 0) {
+          switchShowSummary(false);
+          clearInterval(autoCloseTimer.current);
+          stopAutoCloseSummary.current = true
+          return
+        }
+        setAutoCloseDuration(autoCloseDuration - 1)
+      }, 1000)
+    }
+    const timerE = stopAutoCloseSummary.current ? <></> : <span className='summary-close-duration'>({autoCloseDuration}s)</span>
     return (
       <div className='summary' style={{ display: showSummary ? "" : "none" }} >
         <h3 className='summary-title'>Anna &nbsp;<Tag className='summary-tag'>已認證</Tag></h3>
@@ -819,9 +826,9 @@ const App = (props: AppProps) => {
 
         <Divider className='summary-line' />
         <Flex className='summary-footer' justifyContent="space-between" alignItems="center">
-          <div>累計服務人數 <span style={{ color: "#f60" }}>1246</span></div>
+          <div>累計服務人數 <span style={{ color: "#f60" }}>{getHoursFromTimeToNow(new Date("2023/09/08")) || 1667}</span></div>
           {/* <Button size='sm' className='summary-footer-button' onClick={contactKefu}>點我諮詢</Button> */}
-          <Button size='sm' className='summary-footer-button' onClick={() => { switchShowSummary(false) }}><span className='summary-close-duration'>({autoCloseDuration}s)</span>立即關閉</Button>
+          <Button size='sm' className='summary-footer-button' onClick={() => { switchShowSummary(false) }}>{timerE}立即關閉</Button>
         </Flex>
       </div>
     )
