@@ -258,8 +258,7 @@ function App(appProps: AppProps) {
       }
       if (!headE.querySelector("base")) {
         const baseE = document.createElement("base");
-        const baseHref = getRootUrl(chatUrl)
-        baseE.href = baseHref
+        baseE.href = chatUrl
         headE.insertAdjacentElement("afterbegin", baseE);
       }
       setIframeHtml("<!DOCTYPE html>" + htmlElement.outerHTML)
@@ -410,7 +409,6 @@ function App(appProps: AppProps) {
   </div>)
 
   useEffect(() => {
-    // TODO：如果用户设置了绑定的节点id
     if (bindElement.current) {
       bindElement.current.addEventListener("click", () => {
         onClickButton()
@@ -419,30 +417,24 @@ function App(appProps: AppProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const renderFloatKefuButton = () => {
-    // if (bindElement.current) return <></>
-    const iconImageE = floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage'} src={floatIconImage} alt='chat' /> : <CommentOutlined />
-    return (<FloatButton.Group shape={btnShape}>
-      {messageTipElement}
-      <FloatButton
-        icon={<div className='floatKefuButtonIcon'>{iconImageE}</div>}
-        type="primary"
-        shape={btnShape}
-        style={floatButtonStyle}
-        badge={{ count: unreadMessage.count, overflowCount: 999 }}
-        onClick={onClickButton}
-        target="__blank"
-        className='floatKefuButton'
-      />
-    </FloatButton.Group>)
-  }
-
   //通过appLoadedCallback控制悬浮按钮的显隐
   return (
     <section>
       <ConfigProvider theme={{ token: { colorPrimary: btnColor } }} drawer={{ styles: drawerStyles }}>
         {contextHolder}
-        {renderFloatKefuButton()}
+        {<FloatButton.Group shape={btnShape}>
+          {messageTipElement}
+          <FloatButton
+            icon={<div className='floatKefuButtonIcon'>{floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage'} src={floatIconImage} alt='chat' /> : <CommentOutlined />}</div>}
+            type="primary"
+            shape={btnShape}
+            style={floatButtonStyle}
+            badge={{ count: unreadMessage.count, overflowCount: 999 }}
+            onClick={onClickButton}
+            target="__blank"
+            className='floatKefuButton'
+          />
+        </FloatButton.Group>}
         {renderChatWindow()}
       </ConfigProvider >
     </section >

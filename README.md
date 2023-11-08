@@ -6,6 +6,7 @@
 <script>
   window.LICAT_KEFU = {
     slogan: "光平哥哥真帥",
+    chatUrl: "",
     projectUid: "",
     newPage: false,
     conversionEvent1: () => { },
