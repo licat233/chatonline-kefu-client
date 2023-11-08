@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { ConfigProvider, Drawer, FloatButton, Tooltip, message } from 'antd';
-import { CommentOutlined } from '@ant-design/icons';
+import { CommentOutlined, MessageOutlined } from '@ant-design/icons';
 import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
 import { IsDev, addQueryParam, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
 import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./global";
+import { hydrateRoot } from 'react-dom/client';
 
 const isDev = IsDev()
 
 
 function App(appProps: AppProps) {
-  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, btnColor, btnIcon, tipColor } = appProps.conf
+  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, bindId, btnColor, btnIcon, tipColor } = appProps.conf
   const unreadMsgCacheKey = "unreadMessages" + projectUid;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
@@ -25,11 +26,17 @@ function App(appProps: AppProps) {
   const loadSuccess = useRef(false)
   const firstOpenChat = useRef(false)
   const [iframeHtml, setIframeHtml] = useState<string>()
+  const [floatIconImage, setFloatIconImage] = useState(btnIcon)
+  const bindElement = useRef<HTMLElement | null>((bindId && document.getElementById(bindId)) || null)
 
   const [floatButtonStyle, setFloatButtonStyle] = useState<React.CSSProperties>({ display: useChat && !newPage ? "none" : "" })
 
-  const showFloatButton = () => {
+  const showFloatButton = (data?: any) => {
     setFloatButtonStyle({ ...floatButtonStyle, display: "" });
+    const kefuAvatar = data?.kefu?.avatar
+    if (kefuAvatar) {
+      setFloatIconImage(kefuAvatar)
+    }
   }
 
   window.LICAT_KEFU.appLoadedCallback = showFloatButton
@@ -109,11 +116,11 @@ function App(appProps: AppProps) {
   const handleResize = () => {
     const width = window.innerWidth;
     if (width <= 768) {
-      setChatWindowSize({ width: "100%", height: "75%" });
+      setChatWindowSize({ width: "100%", height: "90%" });
       setBtnShape(btnShape)
       setPlacement("bottom")
     } else {
-      setChatWindowSize({ width: "375px", height: "75%" });
+      setChatWindowSize({ width: "375px", height: "80%" });
       setBtnShape("square")
       setPlacement("right")
     }
@@ -387,22 +394,47 @@ function App(appProps: AppProps) {
     )
   }
 
-  const renderFloatButtonIcon = () => {
-    const iconE = btnIcon ? <img src={btnIcon} alt='chat' /> : <CommentOutlined />
-    return <div className='floatKefuButtonIconBox'>
-      <div>
-        <Tooltip
-          placement="left"
-          color={tipColor}
-          open={unreadMessage.count > 0}
-          arrow={true}
-          zIndex={899}
-          title={unreadMessage.lastMsg}>
-          <div className='floatKefuTipBox'></div>
-        </Tooltip>
-      </div>
-      <div className='floatKefuButtonIcon'>{iconE}</div>
-    </div>
+  const messageTipElement = (<div className='floatKefuTipBox'>
+    <Tooltip
+      placement="topLeft"
+      rootClassName="floatMessageTip"
+      color={tipColor}
+      open={unreadMessage.count > 0}
+      arrow={true}
+      autoAdjustOverflow={true}
+      zIndex={899}
+      title={<span onClick={onClickButton}><MessageOutlined />&nbsp;{unreadMessage.lastMsg}</span>}
+    >
+      <div className='floatKefuTipMark'></div>
+    </Tooltip>
+  </div>)
+
+  useEffect(() => {
+    // TODO：如果用户设置了绑定的节点id
+    if (bindElement.current) {
+      bindElement.current.addEventListener("click", () => {
+        onClickButton()
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const renderFloatKefuButton = () => {
+    // if (bindElement.current) return <></>
+    const iconImageE = floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage'} src={floatIconImage} alt='chat' /> : <CommentOutlined />
+    return (<FloatButton.Group shape={btnShape}>
+      {messageTipElement}
+      <FloatButton
+        icon={<div className='floatKefuButtonIcon'>{iconImageE}</div>}
+        type="primary"
+        shape={btnShape}
+        style={floatButtonStyle}
+        badge={{ count: unreadMessage.count, overflowCount: 999 }}
+        onClick={onClickButton}
+        target="__blank"
+        className='floatKefuButton'
+      />
+    </FloatButton.Group>)
   }
 
   //通过appLoadedCallback控制悬浮按钮的显隐
@@ -410,16 +442,7 @@ function App(appProps: AppProps) {
     <section>
       <ConfigProvider theme={{ token: { colorPrimary: btnColor } }} drawer={{ styles: drawerStyles }}>
         {contextHolder}
-        <FloatButton
-          icon={renderFloatButtonIcon()}
-          type="primary"
-          shape={btnShape}
-          style={floatButtonStyle}
-          badge={{ count: unreadMessage.count, overflowCount: 999 }}
-          onClick={onClickButton}
-          target="__blank"
-          className='floatKefuButton'
-        />
+        {renderFloatKefuButton()}
         {renderChatWindow()}
       </ConfigProvider >
     </section >

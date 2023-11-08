@@ -513,9 +513,9 @@ export function isDesktopUA(): boolean {
 
 export function isMockDevice(): boolean {
     //如果是电脑设备
-    if(isDesktopDevice()) {
+    if (isDesktopDevice()) {
         //但对UA进行了伪装成移动端设备
-        if(!isDesktopUA()){
+        if (!isDesktopUA()) {
             //这种情况下，就是模拟设备
             return true
         }
@@ -599,6 +599,27 @@ export function addAnchorTagsToUrls(inputText: string): string {
     if (hasAnchorTag(inputText)) return inputText
     const urlRegex = /(((https?)?:)?\/\/[^\s\u4E00-\u9FFF]+)/g;
     return inputText.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+}
+
+export function isLineUrl(url: string): boolean {
+    url = url.trim()
+    return (
+        url.startsWith('https://line.me/') ||
+        url.startsWith('http://line.me/') ||
+        url.startsWith('line://ti/p/') ||
+        url.startsWith('//line.me/')
+    );
+}
+
+export function addLineImageToUrls(inputText: string): string {
+    return `<a href="${inputText}" target="_blank"><img class="addlineimage" src="https://img.alicdn.com/imgextra/i4/917298378/O1CN01xQBGhk2BlB8RLPYwL_!!917298378.png" alt="line"/></a>`
+}
+
+export function parseMessageContent(inputText: string): string {
+    if (isLineUrl(inputText)) {
+        return addLineImageToUrls(inputText)
+    }
+    return addAnchorTagsToUrls(inputText)
 }
 
 export const getReferer = (): string => {

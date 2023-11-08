@@ -5,28 +5,31 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
-import { IsDev, getReferer, isDesktopDevice, isDesktopUA } from './utils/utils';
+import { IsDev, getReferer, isDesktopDevice, isDesktopUA, isMockDevice } from './utils/utils';
 import { CurrentAppConf } from './global';
+import { help } from './docs';
 
 const isDev = IsDev()
 
 const defaultConfig: CurrentAppConf = {
   slogan: "",
   projectUid: "",
-  chatUrl: window.location.protocol + '//www.24online.site/',
+  chatUrl: "",
   cvUrls: [],
   useChat: true,
   newPage: false,
   shape: "circle", //默认为circle
+  bindId: "",
   btnColor: '#00b96b', //按钮颜色
   btnIcon: "", //按钮图标url
   tipColor: "blue",  //通知卡片颜色
   conversionEvent1: () => { }, //用户初次转化事件，由父页面定义
   conversionEvent2: () => { }, //用户点击发送按钮时的事件，由父页面定义
+  help: help,
 }
 
 const confErrorAlert = () => {
-  console.log(chalk.yellow("window.LICAT_KEFU has no configuration value"))
+  console.log(chalk.yellow("window.LICAT_KEFU has no configuration value, plase run window.LICAT_KEFU.help()"))
   console.log(chalk.blue("window.LICAT_KEFU value example: \n"), defaultConfig)
 }
 
@@ -47,6 +50,7 @@ const checkSlogan = (slogan: string | undefined): boolean => {
 
 const initConf = (): CurrentAppConf | undefined => {
   if (!window.LICAT_KEFU) {
+    window.LICAT_KEFU = defaultConfig
     confErrorAlert()
     return
   }
@@ -56,6 +60,15 @@ const initConf = (): CurrentAppConf | undefined => {
   if (!checkSlogan(slogan)) {
     return
   }
+  //检查绑定的节点是否存在
+  if (conf.bindId) {
+    const bindE = document.getElementById(conf.bindId);
+    if (!bindE) {
+      console.log(chalk.yellow(`Unable to find bind element, get element by Id: ${conf.bindId}`))
+      return
+    }
+  }
+
   if (shape !== "circle" && shape !== "square") {
     conf.shape = "circle"
   }
@@ -95,7 +108,8 @@ const initConf = (): CurrentAppConf | undefined => {
 }
 
 const startup = () => {
-  if (!isDev && isDesktopDevice() !== isDesktopUA()) {
+  //主要用于防止某些人使用电脑进行伪装访问
+  if (!isDev && isMockDevice()) {
     return
   }
 
@@ -118,7 +132,7 @@ const startup = () => {
       window.document.body.insertAdjacentElement("afterbegin", rootE);
     }
   }
-  const root = ReactDOM.createRoot(rootE as HTMLElement);
+  const root = ReactDOM.createRoot(rootE);
   root.render(
     <React.StrictMode>
       <App conf={config} />

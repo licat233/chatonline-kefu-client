@@ -152,8 +152,8 @@
     <!--Content before waves-->
     <div class="inner-header flex">
       <!--Just the logo.. Don't mind this-->
-      <img src="https://licat-store.oss-cn-hongkong.aliyuncs.com/logo/licat-logo.svg" type="image/svg+xml" width="50px" height="50px"
-        style="background-color: #fff;border-radius: 50%;padding: 2px;margin:10px">
+      <img src="https://licat-store.oss-cn-hongkong.aliyuncs.com/logo/licat-logo.svg" type="image/svg+xml" width="50px"
+        height="50px" style="background-color: #fff;border-radius: 50%;padding: 2px;margin:10px">
       <h1>Kefu Popup Demo</h1>
     </div>
 
@@ -176,12 +176,29 @@
 
   </div>
   <!--Header ends-->
+  <div class="flex">
+    <div id="kefuBtn"
+      style="width: 50px;height:50px;background-color: green;color: #fff;line-height:25px;font-size: 16px;">在线<br />客服
+    </div>
+  </div>
+
+  <div style="position: relative; width: 400px; height: 200px; border: 1px solid black;">
+    <div style="position: absolute; top: 20px; left: 20px; width: 100px; height: 100px; background-color: red;">
+      <!-- 这是第一个绝对定位的 div -->
+      <div style="position: absolute; top: 20px; left: 20px; width: 100px; height: 100px; background-color: blue;">
+        <!-- 这是第二个绝对定位的 div -->
+      </div>
+    </div>
+
+    <div style="position: absolute; top: 20px; left: 20px; width: 100px; height: 100px; background-color: yellow;">
+      <!-- 这是第三个绝对定位的 div -->
+    </div>
+
+  </div>
 
   <!--Content starts-->
   <div class="content flex">
     <p>By.Licat | Free to use </p>
-  </div>
-  <div id="root">
   </div>
   <script>
     window.LICAT_KEFU = {
@@ -190,10 +207,11 @@
       newPage: false,
       btnIcon: "https://swifttalk-storage.oss-cn-hongkong.aliyuncs.com/icon/contact_white.png",
       projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
+      bindId: "kefuBtn",
       conversionEvent1: () => { },
       conversionEvent2: () => { }
     };
-   </script>
+  </script>
 </body>
 
 </html>

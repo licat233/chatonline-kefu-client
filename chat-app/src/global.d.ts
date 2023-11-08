@@ -53,7 +53,7 @@ export interface AppConf {
     conversionEvent1?: () => void, //用户初次转化事件，由用户自定义，父页面调用
     conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用
     getChatAppConf?: () => AppConf | undefined, //用于子页面获取配置，由父页面定义，子页面调用
-    appLoadedCallback?: () => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
+    appLoadedCallback?: (data?: any) => void, //chatApp加载完成后的回调函数，由父页面定义，子页面调用
 }
 
 export interface AppProps {

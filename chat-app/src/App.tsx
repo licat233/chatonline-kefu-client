@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions, Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp } from './utils/utils';
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp, isLineUrl } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
@@ -135,7 +135,7 @@ function App(props: AppProps) {
                 if (ok) {
                     isStartuped.current = true
                     try {
-                        window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback()
+                        window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback({ kefu: { avatar: getAvatarUrl() } })
                     } catch (error) {
                         if (isDev) {
                             console.error(error)
@@ -711,6 +711,7 @@ function App(props: AppProps) {
     const getMessageTextare = (msg: Message): string => {
         msg = msg || {};
         let content = msg.content.text || msg.content.contentObj.text || "";
+        content = content.trim()
         let res = decodeURIComponent(content);
 
         if (isMsgFromSelf(msg)) {
@@ -792,6 +793,15 @@ function App(props: AppProps) {
             case 1: //文本消息
                 let contentElement = <div className='none-select'>{content}</div>
                 if (!isSelf) {
+                    if (isLineUrl(content)) {
+                        return <div className="chatmessage imageMessageCard" style={{ background: "transparent" }}>
+                            <div className='messagecontent'>
+                                <div className="messagePicture none-select">
+                                    <a href={content} target='_blank' rel="noreferrer"><img className='addlineimage' src="https://img.alicdn.com/imgextra/i4/917298378/O1CN01xQBGhk2BlB8RLPYwL_!!917298378.png" alt="line" /></a>
+                                </div>
+                            </div>
+                        </div>
+                    }
                     content = addAnchorTagsToUrls(content)
                     contentElement = <div className='none-select htmltext' dangerouslySetInnerHTML={{ __html: content }} />
                 }

@@ -1,3 +1,5 @@
+import device from "current-device";
+
 export function getRootUrl(url: string): string {
     const parsedUrl = new URL(url);
     const rootUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
@@ -34,14 +36,6 @@ export function getRandomItem<T>(array: T[] | undefined): T | undefined {
 
     const randomIndex = Math.floor(Math.random() * array.length);
     return array[randomIndex];
-}
-
-export function isDesktopUA(userAgent: string = window.navigator.userAgent): boolean {
-    // 定义电脑平台关键词的正则表达式
-    var desktopRegex = /(win(dows)?|macintosh|linux)/i;
-
-    // 使用正则表达式匹配用户代理字符串
-    return desktopRegex.test(userAgent);
 }
 
 export function addQueryParam(url: string, params: { [key: string]: string }): string {
@@ -149,4 +143,20 @@ export function isDesktopDevice(platform: string = window.navigator.platform): b
     }
 
     return false;
+}
+
+export function isDesktopUA(): boolean {
+    return device.type === "desktop"
+}
+
+export function isMockDevice(): boolean {
+    //如果是电脑设备
+    if (isDesktopDevice()) {
+        //但对UA进行了伪装成移动端设备
+        if (!isDesktopUA()) {
+            //这种情况下，就是模拟设备
+            return true
+        }
+    }
+    return false
 }

@@ -824,3 +824,14 @@ textarea::resizer {
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
+
+.addlineimage{
+  width: 100%;
+  max-width: 200px;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.addlineimage img{
+  -webkit-user-drag: none;
+  user-select: none;
+}

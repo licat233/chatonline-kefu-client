@@ -124,6 +124,11 @@
     background-color: var(--bkg-color1);
 }
 
+.MessageContainer img {
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
 .ChatFooter,
 .QuickReplies {
     background-color: var(--bkg-color);
@@ -229,7 +234,9 @@
     -o-border-radius: 10px;
     padding: 0.25em 0.75em;
     font-weight: bold;
-    background-color: #f5f5f5;
+    background-color: #fff;
+    border-color: #ffd0bf;
+    box-shadow: 0 0 2px 0 #ffd0bf;
 }
 
 .summary-close-duration {
@@ -245,4 +252,16 @@
 
 .questionListItem:hover {
     background-color: #f5f5f5;
+}
+
+.addlineimage{
+    width: 100%;
+    max-width: 200px;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.addlineimage>img{
+    -webkit-user-drag: none;
+    user-select: none;
 }

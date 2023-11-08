@@ -600,6 +600,27 @@ export function addAnchorTagsToUrls(inputText: string): string {
     return inputText.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
 }
 
+export function isLineUrl(url: string): boolean {
+    url = url.trim()
+    return (
+        url.startsWith('https://line.me/') ||
+        url.startsWith('http://line.me/') ||
+        url.startsWith('line://ti/p/') ||
+        url.startsWith('//line.me/')
+    );
+}
+
+export function addLineImageToUrls(inputText: string): string {
+    return `<a href="${inputText}" target="_blank"><img class="addlineimage" src="https://img.alicdn.com/imgextra/i4/917298378/O1CN01xQBGhk2BlB8RLPYwL_!!917298378.png" alt="line"/></a>`
+}
+
+export function parseMessageContent(inputText: string): string {
+    if (isLineUrl(inputText)) {
+        return addLineImageToUrls(inputText)
+    }
+    return addAnchorTagsToUrls(inputText)
+}
+
 export const getReferer = (): string => {
     const win = window.top
     if (win) return win.location.href;

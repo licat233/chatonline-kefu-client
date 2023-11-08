@@ -2,7 +2,7 @@ import Chat, { Bubble, Button, CardActions, CardContent, CardMedia, CardText, Ca
 import type { NavbarProps, QuickReplyItemProps, MessageProps as UiMessage } from '@chatui/core';
 import '@chatui/core/dist/index.css';
 import { API, AppProps } from './global';
-import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, isIframe, joinPath, loadLastLoginTime, newUuid, openUniquePage, playSound, replaceHtml, showNotification, trim } from './utils/utils';
+import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, isIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, parseMessageContent, playSound, replaceHtml, showNotification, trim } from './utils/utils';
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, Message as WkMessage, MessageText, PullMode, SyncOptions } from 'wukongimjssdk';
 import { useEffect, useRef, useState } from 'react';
 import { decryptJSONString, encryptData } from './utils/crypto';
@@ -10,7 +10,7 @@ import axios from 'axios';
 import { Convert } from './utils/covert';
 import chalk from 'chalk';
 import "./App.css";
-// import { Image as AntdImage } from 'antd';
+import { Image as AntdImage } from 'antd';
 import { EnvironmentFilled, EnvironmentOutlined, SafetyCertificateFilled, SafetyCertificateOutlined, SafetyOutlined, SendOutlined } from '@ant-design/icons';
 import { MessageContainerHandle } from '@chatui/core/lib/components/MessageContainer';
 import { ComposerHandle } from '@chatui/core/lib/components/Composer';
@@ -51,6 +51,7 @@ const App = (props: AppProps) => {
   const [kefuInfo, setKefuInfo] = useState<API.KefuInfo>(visitorLoginResp.current.kefu_info)
   const chatMessageAudioRef = useRef<HTMLAudioElement>(null);
   const chatMessageSendAudioRef = useRef<HTMLAudioElement>(null);
+  const autoCloseSecond = 9;
 
   const [noticeContent, setNoticeContent] = useState("");
   const getAvatarUrl = (uid?: string) => {
@@ -83,7 +84,7 @@ const App = (props: AppProps) => {
   const switchShowSummary = (open?: boolean) => {
     open = open ?? !showSummary
     if (open && !showSummary) {
-      setAutoCloseDuration(10)
+      setAutoCloseDuration(autoCloseSecond)
     }
     setShowSummary(open)
   }
@@ -470,7 +471,7 @@ const App = (props: AppProps) => {
         if (ok) {
           isStartuped.current = true
           try {
-            window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback()
+            window.parent.LICAT_KEFU?.appLoadedCallback && window.parent.LICAT_KEFU?.appLoadedCallback({ kefu: { avatar: getAvatarUrl() } })
           } catch (error) {
             if (isDev) {
               console.error(error)
@@ -490,6 +491,7 @@ const App = (props: AppProps) => {
   const getMessageTextare = (msg: WkMessage): string => {
     msg = msg || {};
     let content = msg.content.text || msg.content.contentObj.text || "";
+    content = content.trim()
     let res = decodeURIComponent(content);
 
     if (isMsgFromSelf(msg)) {
@@ -722,6 +724,10 @@ const App = (props: AppProps) => {
       case "text":
         let text = content.text;
         if (position !== "right") {
+          if (isLineUrl(text)) {
+            return <div key={_id}><a href={text} target='_blank' rel="noreferrer"><img className='addlineimage' src="https://img.alicdn.com/imgextra/i4/917298378/O1CN01xQBGhk2BlB8RLPYwL_!!917298378.png" alt="line" /></a>
+            </div>
+          }
           text = addAnchorTagsToUrls(text)
           return <Bubble type={type} key={_id}>
             <p dangerouslySetInnerHTML={{ __html: text }} />
@@ -732,7 +738,7 @@ const App = (props: AppProps) => {
         </Bubble>;
       case "image":
         return <Bubble type={type} key={_id}>
-          <Image lazy src={content.picUrl} alt="" />
+          <AntdImage src={content.picUrl} alt="" />
         </Bubble>;
       case "card":
         return <Card key={_id}>{content}</Card>
@@ -759,7 +765,7 @@ const App = (props: AppProps) => {
         </Bubble>
     }
   }
-  const [autoCloseDuration, setAutoCloseDuration] = useState<number>(10)
+  const [autoCloseDuration, setAutoCloseDuration] = useState<number>(autoCloseSecond)
   const autoCloseTimer = useRef<any>()
   const renderSummary = () => {
     if (!showSummary) return <></>
@@ -774,8 +780,6 @@ const App = (props: AppProps) => {
         switchShowSummary(false);
         clearInterval(autoCloseTimer.current)
         return
-      } else if (autoCloseDuration <= 1) {
-        switchShowSummary(false);
       }
       setAutoCloseDuration(autoCloseDuration - 1)
     }, 1000)
