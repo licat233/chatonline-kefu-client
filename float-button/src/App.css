@@ -105,12 +105,12 @@
 }
 
 .chatModalWindow {
-  height: var(--height-80);
+  height: var(--height-85);
   width: 100%;
   max-width: 100%;
   background: transparent;
   padding: 0;
-  top: var(--height-20);
+  top: var(--height-15);
   margin: 0;
   user-select: none;
 

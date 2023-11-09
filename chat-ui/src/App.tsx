@@ -17,7 +17,7 @@ const isDev = IsDev()
 const isIframe = IsIframe()
 
 const App = (props: AppProps) => {
-  const { referer, projectUid } = props.conf;
+  const { referer, projectUid, autoMsgs } = props.conf;
   const apiURL = props.apiURL;
   const channelType = ChannelTypeGroup;
   const visitorLoginResp = useRef<API.VisitorLoginResp>({
@@ -51,6 +51,7 @@ const App = (props: AppProps) => {
   const autoCloseSecond = 9;
   const stopAutoCloseSummary = useRef<boolean>(false)
   const startAutoCloseSummary = useRef<boolean>(false)
+  const isFirstOpen = useRef<boolean>(true)
 
   const getAvatarUrl = (uid?: string) => {
     uid = uid ?? visitorLoginResp.current.kefu_info.uid
@@ -98,8 +99,7 @@ const App = (props: AppProps) => {
   const [loading, setLoading] = useState(false);
   const isChildrenIframe = IsIframe();
 
-  const renderQuestionCard = () => {
-    const titles: string[] = ["色斑問題", "皺紋問題", "痘痘問題", "肌膚暗黃", "肌膚敏感", "肌膚鬆弛"];
+  const renderQuestionCard = (titles: string[]) => {
     const clickHandler = (title: string) => {
       const msg = newUIMessage("text", { text: title }, "right")
       appendMsg(msg)
@@ -120,18 +120,17 @@ const App = (props: AppProps) => {
   const autoReplyTimer = useRef<any>()
   const autoReplyDuration = useRef<number>(3000)
 
-
   const startupAutoReply = () => {
-    autoReplyMessages.current = [
-      newUIMessage("text", { text: "請問有什麼可以幫你解答的嗎？" }),
-      newUIMessage("bubble", renderQuestionCard()),
-      newUIMessage("text", { text: "多大年齡了？" }),
-      newUIMessage("text", { text: "是本人還是家屬？" }),
-      newUIMessage("text", { text: "這邊諮詢訊息是保密的，請放心交流" }),
-      newUIMessage("text", { text: "在嗎？" }),
-      newUIMessage("text", { text: "還在嗎？我在等你回復" }),
-      newUIMessage("text", { text: "你好，能看到我的訊息嗎？" }),
-    ];
+    if (Array.isArray(autoMsgs)) {
+      autoReplyMessages.current = []
+      autoMsgs.forEach(msg => {
+        if (Array.isArray(msg)) {
+          autoReplyMessages.current.push(newUIMessage("bubble", renderQuestionCard(msg)))
+        } else {
+          autoReplyMessages.current.push(newUIMessage("text", { text: msg }))
+        }
+      })
+    }
     autoReplyEvent()
   }
 
@@ -158,10 +157,14 @@ const App = (props: AppProps) => {
   //当展示当前窗口时，需要执行的程序
   const openChatCallback = () => {
     if (!isIframe) return;
-    startAutoCloseSummary.current = true
-    setTimeout(() => {
-      startupAutoReply()
-    }, 1000)
+    if (isFirstOpen.current) {
+      isFirstOpen.current = false
+      startAutoCloseSummary.current = true
+      setTimeout(() => {
+        startupAutoReply()
+      }, 1000)
+    }
+
   }
   window.LICAT_KEFU.openChatCallback = openChatCallback
 

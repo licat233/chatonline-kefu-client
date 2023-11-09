@@ -153,8 +153,13 @@ export function isDesktopUA(): boolean {
 
 export function isMockMoblieDevice(): boolean {
     //如果是电脑设备,但对UA进行了伪装成移动端设备
-    if (isDesktopDevice()&&!isDesktopUA()) {
+    if (isDesktopDevice() && !isDesktopUA()) {
         return true
     }
     return false
+}
+
+export function removeProtocol(url: string): string {
+    const pattern = /^https?:/;
+    return url.replace(pattern, '');
 }

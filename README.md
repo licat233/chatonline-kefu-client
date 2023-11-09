@@ -7,6 +7,7 @@
   window.LICAT_KEFU = {
     slogan: "光平哥哥真帥",
     chatUrl: "",
+    chatVersion: "v2",
     projectUid: "",
     newPage: false,
     conversionEvent1: () => { },
@@ -16,7 +17,7 @@
     let sE = document.createElement("script");
     sE.src = src + "?timestamp=" + (new Date().getTime());
     document.head.insertAdjacentElement("beforeend", sE);
-  })("https://licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
+  })(window.location.protocol + "//licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
 </script>
 ```
 
@@ -93,7 +94,6 @@ html {
   height: var(--full-height) !important;
 }
 ```
-
 
 ## 笔记
 

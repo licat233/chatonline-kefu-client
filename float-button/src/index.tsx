@@ -31,7 +31,9 @@ const isDev = IsDev()
 const defaultConfig: CurrentAppConf = {
   slogan: "",
   projectUid: "",
-  chatUrl: "",
+  chatUrl: "//licat-store.oss-cn-hongkong.aliyuncs.com/lib/chatonline/v2/index.html",
+  chatVersion: "v2",
+  autoMsgs: [],
   cvUrls: [],
   useChat: true,
   newPage: false,
@@ -46,6 +48,7 @@ const defaultConfig: CurrentAppConf = {
     return {
       referer: getReferer(),
       projectUid: window.LICAT_KEFU?.projectUid || "",
+      autoMsgs: window.LICAT_KEFU?.autoMsgs,
     }
   },
   help: help,
@@ -79,7 +82,7 @@ const initConf = (): CurrentAppConf | undefined => {
   }
   const conf = Object.assign(defaultConfig, window.LICAT_KEFU);
   window.LICAT_KEFU = conf
-  const { slogan, projectUid, chatUrl, cvUrls, useChat, shape, newPage } = conf;
+  const { slogan, projectUid, chatUrl, chatVersion, cvUrls, useChat, shape } = conf;
   //slogan检查
   if (!checkSlogan(slogan)) {
     return
@@ -94,7 +97,7 @@ const initConf = (): CurrentAppConf | undefined => {
   }
 
   if (shape !== "circle" && shape !== "square") {
-    conf.shape = "circle"
+    conf.shape = defaultConfig.shape
   }
 
   //两种情况：
@@ -114,17 +117,9 @@ const initConf = (): CurrentAppConf | undefined => {
     }
     //验证chatUrl
     if (!chatUrl) {
-      console.log(chalk.yellow(`LICAT_KEFU.chatUrl has no configuration value: "${chatUrl}"`))
-      return
-    }
-    //如果在当前页面打开，则需要定义子页面需要的配置函数
-    if (!newPage) {
-      conf.getChatAppConf = () => {
-        return {
-          referer: getReferer(),
-          projectUid: projectUid,
-        }
-      }
+      // console.log(chalk.yellow(`LICAT_KEFU.chatUrl has no configuration value: "${chatUrl}"`))
+      // return
+      conf.chatUrl = `${window.location.protocol}//licat-store.oss-cn-hongkong.aliyuncs.com/lib/chatonline/${chatVersion || defaultConfig.chatVersion}/index.html`;
     }
   }
   conf.example = defaultConfig

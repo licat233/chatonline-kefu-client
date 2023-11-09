@@ -3,7 +3,7 @@ import './App.css';
 import { ConfigProvider, FloatButton, Modal, Tooltip, message } from 'antd';
 import { CloseCircleTwoTone, CommentOutlined, MessageOutlined } from '@ant-design/icons';
 import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
-import { IsDev, addQueryParam, getRandomItem, getReferer, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
+import { IsDev, addQueryParam, getRandomItem, getReferer, getSupportList, isDesktopUA, openUniquePage, removeProtocol } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
 import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./global";
@@ -22,7 +22,7 @@ function App(appProps: AppProps) {
   const cvUrl = useRef("")
   const [messageApi, contextHolder] = message.useMessage();
   const firstLoaded = useRef(false)
-  const loadSuccess = useRef(false)
+  const loadSuccessMark = useRef(false)
   const firstOpenChat = useRef(false)
   const stopNotify = useRef(false)
   // const [iframeHtml, setIframeHtml] = useState<string>()
@@ -216,7 +216,7 @@ function App(appProps: AppProps) {
       return
     }
     //如果加载失败，则在标签页打开
-    if (!loadSuccess.current) {
+    if (!loadSuccessMark.current) {
       openChatPage()
       return
     }
@@ -252,7 +252,7 @@ function App(appProps: AppProps) {
   };
 
   const iframeInsertContent = (content: string): boolean => {
-    if (content && chatUrl) {
+    if (content && chatUrl && iframeRef.current) {
       const parser = new DOMParser();
       const webDoc = parser.parseFromString(content, 'text/html');
       const htmlElement = webDoc.documentElement;
@@ -260,15 +260,19 @@ function App(appProps: AppProps) {
       if (!headE) {
         return false
       }
-      if (!headE.querySelector("base")) {
+      const baseHref = removeProtocol(chatUrl)
+      const baseE = headE.querySelector("base")
+      if (!baseE) {
         const baseE = document.createElement("base");
-        baseE.href = chatUrl
+        baseE.href = baseHref
         headE.insertAdjacentElement("afterbegin", baseE);
+      } else {
+        baseE.href = baseHref
       }
       const allHtmlCode = "<!DOCTYPE html>" + htmlElement.outerHTML;
       //扯方案有兼容性问题，微信端无法加载
       // setIframeHtml(allHtmlCode)
-      const doc = iframeRef.current?.contentDocument;
+      const doc = iframeRef.current.contentDocument;
       if (doc) {
         doc.open()
         doc.write(allHtmlCode)
@@ -304,8 +308,7 @@ function App(appProps: AppProps) {
             throw new Error("request content fail:" + chatUrl)
           }
           if (iframeInsertContent(content)) {
-            //加载draw
-            loadSuccess.current = true
+            loadSuccessMark.current = true
           } else {
             if (isDev) {
               console.error("加载iframe失败");
@@ -323,8 +326,7 @@ function App(appProps: AppProps) {
           // }
         })
         .catch((err: any) => {
-          //不加载draw
-          loadSuccess.current = false
+          loadSuccessMark.current = false
           if (isDev) {
             console.error(err.message);
           }

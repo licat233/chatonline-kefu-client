@@ -224,9 +224,9 @@
     <script>
         window.LICAT_KEFU = {
             slogan: "光平哥哥真帥",
-            chatUrl: window.location.protocol + "//24online.site/v2/",
+            chatVersion: "v2",
             projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
-            newPage: false,
+            autoMsgs: ["你好，請問有什麼可以幫你？", ["色斑問題", "皺紋問題", "痘痘問題", "肌膚暗黃", "肌膚敏感", "肌膚鬆弛"], "你多大年齡了？", "是本人還是家屬？", "這邊諮詢訊息是保密的，請放心交流", "在嗎？", "還在嗎？我在等你回復", "你好，能看到我的訊息嗎？"],
             conversionEvent1: () => { },
             conversionEvent2: () => { }
         };
@@ -234,7 +234,7 @@
             let sE = document.createElement("script");
             sE.src = src + "?timestamp=" + (new Date().getTime());
             document.head.insertAdjacentElement("beforeend", sE);
-        })("https://licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
+        })(window.location.protocol + "//licat-store.oss-cn-hongkong.aliyuncs.com/lib/kefu/licatkefu.js");
     </script>
 
 
