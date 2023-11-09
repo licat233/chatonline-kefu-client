@@ -52,6 +52,7 @@ const App = (props: AppProps) => {
   const stopAutoCloseSummary = useRef<boolean>(false)
   const startAutoCloseSummary = useRef<boolean>(false)
   const isFirstOpen = useRef<boolean>(true)
+  const visitorHasReplied = useRef<boolean>(false)
 
   const getAvatarUrl = (uid?: string) => {
     uid = uid ?? visitorLoginResp.current.kefu_info.uid
@@ -101,8 +102,10 @@ const App = (props: AppProps) => {
 
   const renderQuestionCard = (titles: string[]) => {
     const clickHandler = (title: string) => {
-      const msg = newUIMessage("text", { text: title }, "right")
-      appendMsg(msg)
+      // const msg = newUIMessage("text", { text: title }, "right")
+      // appendMsg(msg)
+      // visitorHasReplied.current = true;
+      handleSend("text", title)
     }
     return (<div>
       <h4>你是否想諮詢：</h4>
@@ -114,7 +117,6 @@ const App = (props: AppProps) => {
     </div>)
   }
 
-  const visitorHasReplied = useRef<boolean>(false)
   const autoReplyMessages = useRef<UiMessage[]>([])
   const autoReplyIndex = useRef<number>(0)
   const autoReplyTimer = useRef<any>()
@@ -450,6 +452,8 @@ const App = (props: AppProps) => {
       //消息提醒
       if (!isMsgFromSelf(message)) {
         notifyMessage(getMessageNotifyContent(message));
+      }else{
+        visitorHasReplied.current = true;
       }
     });
     // 提供频道内消息同步的数据源
@@ -615,6 +619,7 @@ const App = (props: AppProps) => {
 
   const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
   const prohibitSend = useRef<boolean>(false);
+
   const handleSend = async (type: string, text: string) => {
     if (!isStartuped.current) {
       toast.loading("loading", 2000)
