@@ -1,8 +1,8 @@
-import Chat, { Bubble, Button, CardActions, CardContent, CardMedia, CardText, CardTitle, Flex, FlexItem, Icon, MessageProps, Notice, Video, toast, useMessages, Card, FileCard, Divider, Text, Carousel, Image, Tag, Popup, Modal, List, ListItem } from '@chatui/core';
-import type { NavbarProps, QuickReplyItemProps, MessageProps as UiMessage } from '@chatui/core';
+import Chat, { Bubble, Button, Flex, MessageProps, Video, toast, useMessages, Card, FileCard, Divider, Carousel, Tag, ListItem } from '@chatui/core';
+import type { QuickReplyItemProps, MessageProps as UiMessage } from '@chatui/core';
 import '@chatui/core/dist/index.css';
 import { API, AppProps } from './global';
-import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getDateMonthsAgo, getHoursFromTimeToNow, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, isIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, parseMessageContent, playSound, replaceHtml, showNotification, trim } from './utils/utils';
+import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getHoursFromTimeToNow, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, IsIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, playSound, replaceHtml, showNotification, trim } from './utils/utils';
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, Message as WkMessage, MessageText, PullMode, SyncOptions } from 'wukongimjssdk';
 import { useEffect, useRef, useState } from 'react';
 import { decryptJSONString, encryptData } from './utils/crypto';
@@ -11,14 +11,10 @@ import { Convert } from './utils/covert';
 import chalk from 'chalk';
 import "./App.css";
 import { Image as AntdImage } from 'antd';
-import { EnvironmentFilled, EnvironmentOutlined, SafetyCertificateFilled, SafetyCertificateOutlined, SafetyOutlined, SendOutlined } from '@ant-design/icons';
-import { MessageContainerHandle } from '@chatui/core/lib/components/MessageContainer';
-import { ComposerHandle } from '@chatui/core/lib/components/Composer';
-import { ScrollToEndOptions } from '@chatui/core/lib/components/PullToRefresh';
-import dayjs from 'dayjs';
-// import "animate.css";
+import { EnvironmentFilled, SafetyCertificateFilled } from '@ant-design/icons';
 
 const isDev = IsDev()
+const isIframe = IsIframe()
 
 const App = (props: AppProps) => {
   const { referer, projectUid } = props.conf;
@@ -54,20 +50,14 @@ const App = (props: AppProps) => {
   const chatMessageSendAudioRef = useRef<HTMLAudioElement>(null);
   const autoCloseSecond = 9;
   const stopAutoCloseSummary = useRef<boolean>(false)
+  const startAutoCloseSummary = useRef<boolean>(false)
 
-  const [noticeContent, setNoticeContent] = useState("");
   const getAvatarUrl = (uid?: string) => {
     uid = uid ?? visitorLoginResp.current.kefu_info.uid
     if (!uid) return "//licat-store.oss-cn-hongkong.aliyuncs.com/logo/cslogo.png";
     return `${apiURL}/users/${uid}/avatar`
   }
 
-  // const [kefuAvatar, setKefuAvatar] = useState<string>("//licat-store.oss-cn-hongkong.aliyuncs.com/logo/cslogo.png");
-  // const videoRef = useRef<HTMLVideoElement>(null)
-  // const getVideoHeight = () => {
-  //   if (!videoRef.current) return 300;
-  //   return videoRef.current.videoHeight
-  // }
   const carouselImgs = () => {
     const urls: string[] = [
       "//img.alicdn.com/imgextra/i3/917298378/O1CN01yYWvoX2BlAtfftx8z_!!917298378.jpg",
@@ -106,8 +96,7 @@ const App = (props: AppProps) => {
 
   const loadRecordCompleted = useRef<boolean>(false);
   const [loading, setLoading] = useState(false);
-  let isFirstLoad = true;
-  const isChildrenIframe = isIframe();
+  const isChildrenIframe = IsIframe();
 
   const renderQuestionCard = () => {
     const titles: string[] = ["色斑問題", "皺紋問題", "痘痘問題", "肌膚暗黃", "肌膚敏感", "肌膚鬆弛"];
@@ -130,28 +119,7 @@ const App = (props: AppProps) => {
   const autoReplyIndex = useRef<number>(0)
   const autoReplyTimer = useRef<any>()
   const autoReplyDuration = useRef<number>(3000)
-  const autoReplyEvent = () => {
-    if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
-      clearTimeout(autoReplyTimer.current)
-      return
-    }
-    autoReplyTimer.current = setTimeout(() => {
-      if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
-        clearTimeout(autoReplyTimer.current)
-        return
-      }
-      const msg = autoReplyMessages.current[autoReplyIndex.current];
-      appendMsg(msg)
-      setTyping(true)
-      autoReplyIndex.current++
-      autoReplyDuration.current += 2000
-      autoReplyEvent()
-    }, autoReplyDuration.current)
-  }
 
-  //登录成功后的回调函数
-  const loginedEvent = () => {
-  }
 
   const startupAutoReply = () => {
     autoReplyMessages.current = [
@@ -165,6 +133,40 @@ const App = (props: AppProps) => {
       newUIMessage("text", { text: "你好，能看到我的訊息嗎？" }),
     ];
     autoReplyEvent()
+  }
+
+  const autoReplyEvent = () => {
+    if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
+      clearTimeout(autoReplyTimer.current)
+      return
+    }
+    autoReplyTimer.current = setTimeout(() => {
+      if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
+        clearTimeout(autoReplyTimer.current)
+        return
+      }
+      const msg = autoReplyMessages.current[autoReplyIndex.current];
+      appendMsg(msg)
+      notifyMessage(msg.content.text || "[新訊息]");
+      setTyping(true)
+      autoReplyIndex.current++
+      autoReplyDuration.current += 2000
+      autoReplyEvent()
+    }, autoReplyDuration.current)
+  }
+
+  //当展示当前窗口时，需要执行的程序
+  const openChatCallback = () => {
+    if (!isIframe) return;
+    startAutoCloseSummary.current = true
+    setTimeout(() => {
+      startupAutoReply()
+    }, 1000)
+  }
+  window.LICAT_KEFU.openChatCallback = openChatCallback
+
+  //登录成功后的回调函数
+  const loginedEvent = () => {
   }
 
   const errors = (text: string) => {
@@ -343,8 +345,7 @@ const App = (props: AppProps) => {
     window.parent.postMessage(msg); // 这里需要根据实际情况设置目标 origin
   };
 
-  const notifyMessage = (wkMsg: WkMessage) => {
-    const body = getMessageNotifyContent(wkMsg)
+  const notifyMessage = (body: string) => {
     if (!body) return
     if (isChildrenIframe) {
       //如果是iframe页面，应该通知父页面
@@ -443,14 +444,10 @@ const App = (props: AppProps) => {
       //转化消息体
       const uiMsg = convertToUIMssage(message)
       appendMsg(uiMsg)
-      //更新视图
-      // setMessageStore([...messageStore, uiMsg]);
       //消息提醒
       if (!isMsgFromSelf(message)) {
-        notifyMessage(message);
+        notifyMessage(getMessageNotifyContent(message));
       }
-      //来消息通知了，则应该滚动到消息窗口最底部
-      // historyScrollToBottom();
     });
     // 提供频道内消息同步的数据源
     WKSDK.shared().config.provider.syncMessagesCallback = syncMessageCallback
@@ -460,10 +457,12 @@ const App = (props: AppProps) => {
     setLoading(true);
     await loadChatRecord();
     setLoading(false);
-    setTimeout(() => {
-      isFirstLoad = false;
-      startupAutoReply()
-    }, 500)
+    if (!isIframe) {
+      startAutoCloseSummary.current = true
+      setTimeout(() => {
+        startupAutoReply()
+      }, 1000)
+    }
     return true
   }
 
@@ -776,6 +775,7 @@ const App = (props: AppProps) => {
     if (!stopAutoCloseSummary.current) {
       autoCloseTimer.current && clearInterval(autoCloseTimer.current);
       autoCloseTimer.current = setInterval(() => {
+        if (!startAutoCloseSummary.current) return
         if (stopAutoCloseSummary.current) {
           clearInterval(autoCloseTimer.current);
           return

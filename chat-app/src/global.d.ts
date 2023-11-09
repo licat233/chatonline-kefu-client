@@ -47,6 +47,7 @@ export namespace API {
 }
 
 export interface AppConf {
+    slogan?: string,
     referer: string,
     projectUid: string,
     openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义，父页面调用

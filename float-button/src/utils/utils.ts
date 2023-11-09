@@ -1,5 +1,7 @@
 import device from "current-device";
 
+export const currentDevice = device
+
 export function getRootUrl(url: string): string {
     const parsedUrl = new URL(url);
     const rootUrl = `${parsedUrl.protocol}//${parsedUrl.host}`;
@@ -149,14 +151,10 @@ export function isDesktopUA(): boolean {
     return device.type === "desktop"
 }
 
-export function isMockDevice(): boolean {
-    //如果是电脑设备
-    if (isDesktopDevice()) {
-        //但对UA进行了伪装成移动端设备
-        if (!isDesktopUA()) {
-            //这种情况下，就是模拟设备
-            return true
-        }
+export function isMockMoblieDevice(): boolean {
+    //如果是电脑设备,但对UA进行了伪装成移动端设备
+    if (isDesktopDevice()&&!isDesktopUA()) {
+        return true
     }
     return false
 }

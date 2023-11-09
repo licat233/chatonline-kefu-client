@@ -351,7 +351,7 @@ export function replaceHtml(str: string) {
 }
 
 export const showNotification = (title: string, options: NotificationOptions | undefined, callback: (this: Notification, ev: Event) => any | undefined) => {
-    if (isIframe()) {
+    if (IsIframe()) {
         // 发送消息给父页面
         window.parent.postMessage({
             type: "message",
@@ -445,7 +445,7 @@ export async function copyTextToClipboard(text: string): Promise<boolean> {
     }
 }
 
-export const isIframe = (): boolean => {
+export const IsIframe = (): boolean => {
     // 判断当前页面是否为子iframe页面
     return window.parent !== window
 }
@@ -511,14 +511,10 @@ export function isDesktopUA(): boolean {
     return device.type === "desktop"
 }
 
-export function isMockDevice(): boolean {
-    //如果是电脑设备
-    if (isDesktopDevice()) {
-        //但对UA进行了伪装成移动端设备
-        if (!isDesktopUA()) {
-            //这种情况下，就是模拟设备
-            return true
-        }
+export function isMockMoblieDevice(): boolean {
+    //如果是电脑设备,但对UA进行了伪装成移动端设备
+    if (isDesktopDevice() && !isDesktopUA()) {
+        return true
     }
     return false
 }
@@ -763,4 +759,12 @@ export function getHoursFromTimeToNow(targetTime: Date = new Date()): number {
     const timeDiffInMilliseconds: number = currentTime.getTime() - targetTime.getTime();
     const hoursDiff: number = Math.floor(timeDiffInMilliseconds / (1000 * 60 * 60));
     return hoursDiff;
+}
+
+export const getHttpProtocol = (protocol?: string) => {
+    protocol = protocol || window.parent.location.protocol
+    if (protocol !== "http:" && protocol !== "https:") {
+        return "http:"
+    }
+    return protocol
 }

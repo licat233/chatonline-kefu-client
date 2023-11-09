@@ -1,0 +1,13 @@
+:root {
+    --full-height: calc(var(--vh, 1vh) * 100);
+    --height-100: calc(var(--vh, 1vh) * 100);
+    --height-90: calc(var(--vh, 1vh) * 90);
+    --height-80: calc(var(--vh, 1vh) * 80);
+    --height-70: calc(var(--vh, 1vh) * 70);
+    --height-60: calc(var(--vh, 1vh) * 60);
+    --height-50: calc(var(--vh, 1vh) * 50);
+    --height-40: calc(var(--vh, 1vh) * 40);
+    --height-30: calc(var(--vh, 1vh) * 30);
+    --height-20: calc(var(--vh, 1vh) * 20);
+    --height-10: calc(var(--vh, 1vh) * 10);
+}

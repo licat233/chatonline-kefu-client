@@ -19,7 +19,7 @@ export interface CurrentAppConf {
     newPage?: boolean, //是否打开新页面进行聊天
     shape?: "square" | "circle",  //按钮形状
     bindId?: string, //绑定的客服按钮id
-    btnColor?: string, //按钮颜色
+    colorPrimary?: string, //主题色
     btnIcon?: string, //按钮图标url
     tipColor?: string,  //通知卡片颜色
     openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义

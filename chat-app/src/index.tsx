@@ -1,20 +1,59 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import './index.module.css';
 import reportWebVitals from './reportWebVitals';
-import { IsDev, getQueryParamValue, isDesktopDevice, isDesktopUA, isIframe, isMockDevice } from './utils/utils';
+import { IsDev, getHttpProtocol, getQueryParamValue, IsIframe } from './utils/utils';
 import App from "./App";
 import { decryptString, encryptString } from './utils/crypto';
 import { ConfigProvider } from 'antd';
 import { AppConf } from './global';
-
+import chalk from 'chalk';
 
 const isDev = IsDev();
+const isIframe = IsIframe();
+
+var customViewportCorrectionVariable = 'vh';
+function setViewportProperty(doc: HTMLElement) {
+  var prevClientHeight: number;
+  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
+  function handleResize() {
+    var clientHeight = doc.clientHeight;
+    if (clientHeight === prevClientHeight) return;
+    requestAnimationFrame(function updateViewportHeight() {
+      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
+      prevClientHeight = clientHeight;
+    });
+  }
+  handleResize();
+  return handleResize;
+}
+window.addEventListener('resize', setViewportProperty(document.documentElement));
 
 //后缀不要加/
-const apiURL = window.parent.location.protocol + "//api.im.mixbench.net/v1"
+const apiURL = getHttpProtocol() + "//api.im.mixbench.net/v1"
+
+const confErrorAlert = () => {
+  console.log(chalk.yellow("window.LICAT_KEFU has no configuration value"))
+}
+
+const checkSlogan = (slogan: string | undefined): boolean => {
+  let decryptSlogan = ""
+  if (slogan) {
+    const encryptSlogan = "MTkxLDIwNywxNjIsMTYxLDE4NSwyMjcsMTA5LDIxMiwxODcsMjA2LDExMywyMzcsMTkzLDE4NSwxNzMsMjM2LDE5MSwyMDcsMTY2LDE2MCwxODUsMjQzLDk3LDIxMiwxODcsMjA2LDEwMSwxNjgsMTkyLDE4NSwxNzcsMjM2LDE5MSwyMjMsMTYyLDE1OCwxODUsMTg5LDEwOSwyMTIsMTg3LDIwNiwxMTMsMjM3LDE5MSwyMjMsMTgxLDE4Mg==";
+    const crypthScret = "really and truly"
+    decryptSlogan = decryptString(decryptString(encryptSlogan, crypthScret), crypthScret);
+    if (slogan === decryptSlogan) return true
+  }
+  if (!window.document.body) return false
+  window.document.body.style.backgroundColor = "#fff";
+  window.document.body.style.textAlign = "center";
+  window.document.body.innerHTML = `<h1>請說：${decryptSlogan}</h1><p>需要設置這個全局變量才能啟動： <br/> <br/> <code style="color: #fff; background-color: #000; padding:5px;margin: 10px 0;"> window.LICAT_KEFU.slogan = "${decryptSlogan}"</code> </p>`
+  return false
+}
+
 //从url中读取配置
 const getConfFromUrl = (): AppConf | undefined => {
+  if (window.location.href === "about:srcdoc") return undefined
   const paramsStr = getQueryParamValue("licat")
   if (paramsStr) {
     try {
@@ -29,8 +68,11 @@ const getConfFromUrl = (): AppConf | undefined => {
     }
   }
 }
+
 //从父页面读取配置
 const getConfFromParent = (): AppConf | undefined => {
+  //前提必须是子页面
+  if (!isIframe) return undefined
   const fn = window.parent.LICAT_KEFU?.getChatAppConf
   if (typeof fn === 'function') {
     let conf = fn()
@@ -39,11 +81,19 @@ const getConfFromParent = (): AppConf | undefined => {
   return undefined
 }
 
+//从本地读取配置
 const getConfFromLocal = (): AppConf | undefined => {
   //前提是不能是子页面
-  if (isIframe()) return undefined
-  if (!window.LICAT_KEFU) return
+  if (isIframe) return undefined
+  if (!window.LICAT_KEFU) {
+    confErrorAlert()
+    return
+  }
   if (Object.prototype.toString.call(window.LICAT_KEFU) !== "[object Object]") return
+  //slogan检查
+  if (!checkSlogan(window.LICAT_KEFU?.slogan)) {
+    return
+  }
   const defaultConf: AppConf = {
     referer: window.location.href,
     projectUid: "",
@@ -55,16 +105,16 @@ const getConfFromLocal = (): AppConf | undefined => {
 
 const startup = () => {
   //主要用于防止某些人使用电脑进行伪装访问
-  if (!isDev && isMockDevice()) {
-    return
-  }
+  // if (!isDev && isMockMoblieDevice()) {
+  //   return
+  // }
 
   //准备工作
-  // 优先从父页面中读取
-  let conf = getConfFromParent()
+  // 优先从url中读取
+  let conf = getConfFromUrl()
   if (!conf) {
-    //再从url中读取
-    conf = getConfFromUrl()
+    //再从父页面中读取
+    conf = getConfFromParent()
     if (!conf) {
       //再从本地读取
       conf = getConfFromLocal()

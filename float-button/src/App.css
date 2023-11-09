@@ -1,3 +1,7 @@
+:root {
+  --boder-radius: 14px;
+}
+
 .chatIframe {
   box-sizing: border-box;
   border: none;
@@ -48,6 +52,19 @@
   height: 40px;
   top: 0px;
   left: 0px;
+  background-color: #fff;
+}
+
+.floatKefuBtnImage.squareShap {
+  margin-left: -4px;
+  margin-top: -4px;
+  border-radius: 8px !important;
+  -webkit-border-radius: 8px !important;
+  -moz-border-radius: 8px !important;
+  -ms-border-radius: 8px !important;
+  -o-border-radius: 8px !important;
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
 }
 
 .floatKefuTipBox {
@@ -73,4 +90,79 @@
   -moz-border-radius: 13px;
   -ms-border-radius: 13px;
   -o-border-radius: 13px;
+}
+
+.ant-float-btn-square {
+  border-radius: 8px !important;
+  -webkit-border-radius: 8px !important;
+  -moz-border-radius: 8px !important;
+  -ms-border-radius: 8px !important;
+  -o-border-radius: 8px !important;
+}
+
+.chatModalWindowRoot {
+  user-select: none;
+}
+
+.chatModalWindow {
+  height: var(--height-80);
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  padding: 0;
+  top: var(--height-20);
+  margin: 0;
+  user-select: none;
+
+  .ant-modal-content {
+    padding: 0;
+    height: 100%;
+    border-radius: var(--boder-radius);
+    -webkit-border-radius: var(--boder-radius);
+    -moz-border-radius: var(--boder-radius);
+    -ms-border-radius: var(--boder-radius);
+    -o-border-radius: var(--boder-radius);
+  }
+
+  .ant-modal-body {
+    height: 100%;
+    border-radius: var(--boder-radius);
+    -webkit-border-radius: var(--boder-radius);
+    -moz-border-radius: var(--boder-radius);
+    -ms-border-radius: var(--boder-radius);
+    -o-border-radius: var(--boder-radius);
+    overflow: hidden;
+  }
+
+  .ant-modal-footer {
+    margin: 0;
+    padding: 0;
+    display: none;
+  }
+
+  .ant-modal-close {
+    top: -1rem;
+    right: 0;
+  }
+}
+
+.mobile {
+  .ant-modal-body {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+}
+
+@media screen and (min-width: 600px) {
+  .desktop {
+    .chatModalWindow {
+      /* position: absolute; */
+      top: calc(var(--height-100) - 600px - 40px);
+      height: 100%;
+      max-height: 600px;
+      width: 100%;
+      max-width: 375px;
+      margin: 0 90px 0 auto
+    }
+  }
 }

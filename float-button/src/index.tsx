@@ -5,9 +5,26 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
-import { IsDev, getReferer, isDesktopDevice, isDesktopUA, isMockDevice } from './utils/utils';
+import { IsDev, getReferer } from './utils/utils';
 import { CurrentAppConf } from './global';
 import { help } from './docs';
+
+var customViewportCorrectionVariable = 'vh';
+function setViewportProperty(doc: HTMLElement) {
+  var prevClientHeight: number;
+  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
+  function handleResize() {
+    var clientHeight = doc.clientHeight;
+    if (clientHeight === prevClientHeight) return;
+    requestAnimationFrame(function updateViewportHeight() {
+      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
+      prevClientHeight = clientHeight;
+    });
+  }
+  handleResize();
+  return handleResize;
+}
+window.addEventListener('resize', setViewportProperty(document.documentElement));
 
 const isDev = IsDev()
 
@@ -20,11 +37,17 @@ const defaultConfig: CurrentAppConf = {
   newPage: false,
   shape: "circle", //默认为circle
   bindId: "",
-  btnColor: '#fff', //按钮颜色
+  colorPrimary: '#1677ff', //主题色
   btnIcon: "", //按钮图标url
   tipColor: "blue",  //通知卡片颜色
   conversionEvent1: () => { }, //用户初次转化事件，由父页面定义
   conversionEvent2: () => { }, //用户点击发送按钮时的事件，由父页面定义
+  getChatAppConf: () => {
+    return {
+      referer: getReferer(),
+      projectUid: window.LICAT_KEFU?.projectUid || "",
+    }
+  },
   help: help,
 }
 
@@ -55,6 +78,7 @@ const initConf = (): CurrentAppConf | undefined => {
     return
   }
   const conf = Object.assign(defaultConfig, window.LICAT_KEFU);
+  window.LICAT_KEFU = conf
   const { slogan, projectUid, chatUrl, cvUrls, useChat, shape, newPage } = conf;
   //slogan检查
   if (!checkSlogan(slogan)) {
@@ -109,9 +133,9 @@ const initConf = (): CurrentAppConf | undefined => {
 
 const startup = () => {
   //主要用于防止某些人使用电脑进行伪装访问
-  if (!isDev && isMockDevice()) {
-    return
-  }
+  // if (!isDev && isMockMoblieDevice()) {
+  //   return
+  // }
 
   //检查配置
   const config = initConf();

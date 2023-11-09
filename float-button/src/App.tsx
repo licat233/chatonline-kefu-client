@@ -1,31 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { ConfigProvider, Drawer, FloatButton, Tooltip, message } from 'antd';
-import { CommentOutlined, MessageOutlined } from '@ant-design/icons';
+import { ConfigProvider, FloatButton, Modal, Tooltip, message } from 'antd';
+import { CloseCircleTwoTone, CommentOutlined, MessageOutlined } from '@ant-design/icons';
 import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
-import { IsDev, addQueryParam, getRandomItem, getReferer, getRootUrl, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
+import { IsDev, addQueryParam, getRandomItem, getReferer, getSupportList, isDesktopUA, openUniquePage } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
 import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./global";
-import { hydrateRoot } from 'react-dom/client';
 
 const isDev = IsDev()
-
+const isPC = isDesktopUA()
 
 function App(appProps: AppProps) {
-  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, bindId, btnColor, btnIcon, tipColor } = appProps.conf
+  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, bindId, colorPrimary, btnIcon, tipColor } = appProps.conf
   const unreadMsgCacheKey = "unreadMessages" + projectUid;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
-  const [placement, setPlacement] = useState<'left' | 'right' | 'top' | 'bottom' | undefined>("bottom")
+  // const [placement, setPlacement] = useState<'left' | 'right' | 'top' | 'bottom' | undefined>("bottom")
   const [btnShape, setBtnShape] = useState<"square" | "circle">(shape || "circle");
-  const [chatWindowSize, setChatWindowSize] = useState<Record<string, string | number | undefined>>({ width: undefined, height: undefined })
+  // const [chatWindowSize, setChatWindowSize] = useState<Record<string, string | number | undefined>>({ width: undefined, height: undefined })
   const cvUrl = useRef("")
   const [messageApi, contextHolder] = message.useMessage();
   const firstLoaded = useRef(false)
   const loadSuccess = useRef(false)
   const firstOpenChat = useRef(false)
-  const [iframeHtml, setIframeHtml] = useState<string>()
+  const stopNotify = useRef(false)
+  // const [iframeHtml, setIframeHtml] = useState<string>()
   const [floatIconImage, setFloatIconImage] = useState(btnIcon)
   const bindElement = useRef<HTMLElement | null>((bindId && document.getElementById(bindId)) || null)
 
@@ -63,15 +63,17 @@ function App(appProps: AppProps) {
   };
 
   const getUnreadMsgCache = (): unreadMsg => {
-    const value = localStorage.getItem(unreadMsgCacheKey)
-    if (value) {
-      const data = JSON.parse(value) as unreadMsg
-      const num = data.count;
-      if (!isNaN(num)) {
-        return data
+    if (useChat && !newPage) {
+      const value = localStorage.getItem(unreadMsgCacheKey)
+      if (value) {
+        const data = JSON.parse(value) as unreadMsg
+        const num = data.count;
+        if (!isNaN(num)) {
+          return data
+        }
       }
+      localStorage.removeItem(unreadMsgCacheKey)
     }
-    localStorage.removeItem(unreadMsgCacheKey)
     return { count: 0, lastMsg: "" }
   }
 
@@ -116,13 +118,13 @@ function App(appProps: AppProps) {
   const handleResize = () => {
     const width = window.innerWidth;
     if (width <= 768) {
-      setChatWindowSize({ width: "100%", height: "90%" });
+      // setChatWindowSize({ width: "100%", height: "var(--height-80)" });
       setBtnShape(btnShape)
-      setPlacement("bottom")
+      // setPlacement("bottom")
     } else {
-      setChatWindowSize({ width: "375px", height: "80%" });
+      // setChatWindowSize({ width: "375px", height: "var(--height-80)" });
       setBtnShape("square")
-      setPlacement("right")
+      // setPlacement("right")
     }
   }
 
@@ -131,6 +133,7 @@ function App(appProps: AppProps) {
       firstOpenChat.current = true
     }
     open = open ?? !openChatWindow
+    stopNotify.current = open
     setOpenChatWindow(open)
   };
 
@@ -231,6 +234,7 @@ function App(appProps: AppProps) {
     if (!content) return;
     //判断当前窗口是否是打开状态，如果是打开状态，则不用通知
     if (openChatWindow) return;
+    if (stopNotify.current) return
     //加入未读消息列表
     unreadMessage.count = unreadMessage.count + 1
     unreadMessage.lastMsg = content
@@ -261,7 +265,15 @@ function App(appProps: AppProps) {
         baseE.href = chatUrl
         headE.insertAdjacentElement("afterbegin", baseE);
       }
-      setIframeHtml("<!DOCTYPE html>" + htmlElement.outerHTML)
+      const allHtmlCode = "<!DOCTYPE html>" + htmlElement.outerHTML;
+      //扯方案有兼容性问题，微信端无法加载
+      // setIframeHtml(allHtmlCode)
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) {
+        doc.open()
+        doc.write(allHtmlCode)
+        doc.close()
+      }
       return true
     }
     return false
@@ -291,19 +303,24 @@ function App(appProps: AppProps) {
           if (!content) {
             throw new Error("request content fail:" + chatUrl)
           }
-          iframeInsertContent(content);
-          //加载draw
-          loadSuccess.current = true
+          if (iframeInsertContent(content)) {
+            //加载draw
+            loadSuccess.current = true
+          } else {
+            if (isDev) {
+              console.error("加载iframe失败");
+            }
+          }
           autoOpenChatWindow()
 
           //如果是pc端，10秒钟后自动弹出聊天窗口
-          if (isDesktopUA() && window.innerWidth > 768) {
-            setTimeout(() => {
-              if (firstOpenChat.current) return
-              firstOpenChat.current = true
-              switchChatWindow(true)
-            }, 10000)
-          }
+          // if (isDesktopUA() && window.innerWidth > 768) {
+          //   setTimeout(() => {
+          //     if (firstOpenChat.current) return
+          //     firstOpenChat.current = true
+          //     switchChatWindow(true)
+          //   }, 10000)
+          // }
         })
         .catch((err: any) => {
           //不加载draw
@@ -361,22 +378,66 @@ function App(appProps: AppProps) {
     },
   };
 
+  //旧方案，使用drawer组件进行弹窗
+  // const renderChatWindow2 = () => {
+  //   if (!useChat || newPage) return <></>;
+  //   // if(!iframeHtml) return <></>
+  //   const allowList = getSupportList();
+  //   return (
+  //     <Drawer
+  //       className='chatDrawer'
+  //       placement={placement}
+  //       closable={false}
+  //       open={openChatWindow}
+  //       key="chatonline20231029"
+  //       forceRender={true}
+  //       width={chatWindowSize["width"]}
+  //       height={chatWindowSize["height"]}
+  //       afterOpenChange={afterOpenChange}
+  //       onClose={() => { switchChatWindow(false) }}
+  //     // mask={!isDesktopUA()}
+  //     >
+  //       <iframe
+  //         ref={iframeRef}
+  //         className='chatIframe'
+  //         width="100%"
+  //         height="100%"
+  //         allowFullScreen={true}
+  //         allow={allowList}
+  //         title='chatonline'
+  //         id={"chatIframe-" + projectUid}
+  //         // srcDoc={iframeHtml}
+  //       />
+  //     </Drawer>
+  //   )
+  // }
+
+  //新方案，使用modal组件进行弹窗
   const renderChatWindow = () => {
-    if (!useChat || newPage || !iframeHtml) return <></>;
+    if (!useChat || newPage) return <></>;
+    // if(!iframeHtml) return <></>
     const allowList = getSupportList();
     return (
-      <Drawer
-        className='chatDrawer'
-        placement={placement}
-        closable={false}
+      <Modal
+        key="chatWindow20231109"
+        className='chatModalWindow'
+        rootClassName="chatModalWindowRoot"
+        wrapClassName="chatModalWindowWrap"
+        closable={isPC}
+        closeIcon={<CloseCircleTwoTone style={{ fontSize: "28px" }} />}
+        mask={!isPC}
         open={openChatWindow}
-        key="chatonline20231029"
+        maskClosable={true}
         forceRender={true}
-        width={chatWindowSize["width"]}
-        height={chatWindowSize["height"]}
+        destroyOnClose={false}
+        cancelText={!isPC}
+        width={"100%"}
         afterOpenChange={afterOpenChange}
-        onClose={() => { setOpenChatWindow(false) }}
-      // mask={!isDesktopUA()}
+        afterClose={() => { switchChatWindow(false) }}
+        onCancel={() => { switchChatWindow(false) }}
+        onOk={() => { switchChatWindow(false) }}
+        footer={null}
+      // centered={true}
       >
         <iframe
           ref={iframeRef}
@@ -387,26 +448,28 @@ function App(appProps: AppProps) {
           allow={allowList}
           title='chatonline'
           id={"chatIframe-" + projectUid}
-          srcDoc={iframeHtml}
         />
-      </Drawer>
+      </Modal>
     )
   }
 
-  const messageTipElement = (<div className='floatKefuTipBox'>
-    <Tooltip
-      placement="topLeft"
-      rootClassName="floatMessageTip"
-      color={tipColor}
-      open={unreadMessage.count > 0}
-      arrow={true}
-      autoAdjustOverflow={true}
-      zIndex={899}
-      title={<span onClick={onClickButton}><MessageOutlined />&nbsp;{unreadMessage.lastMsg}</span>}
-    >
-      <div className='floatKefuTipMark'></div>
-    </Tooltip>
-  </div>)
+  const renderMessageTipElement = () => {
+    if (openChatWindow) return <></>
+    return (<div className='floatKefuTipBox'>
+      <Tooltip
+        placement="topLeft"
+        rootClassName="floatMessageTip"
+        color={tipColor}
+        open={unreadMessage.count > 0}
+        arrow={true}
+        autoAdjustOverflow={true}
+        zIndex={899}
+        title={<span onClick={onClickButton}><MessageOutlined />&nbsp;{unreadMessage.lastMsg}</span>}
+      >
+        <div className='floatKefuTipMark'></div>
+      </Tooltip>
+    </div>)
+  }
 
   useEffect(() => {
     if (bindElement.current) {
@@ -420,12 +483,12 @@ function App(appProps: AppProps) {
   //通过appLoadedCallback控制悬浮按钮的显隐
   return (
     <section>
-      <ConfigProvider theme={{ token: { colorPrimary: btnColor } }} drawer={{ styles: drawerStyles }}>
+      <ConfigProvider theme={{ token: { colorPrimary: colorPrimary } }} drawer={{ styles: drawerStyles }}>
         {contextHolder}
         {<FloatButton.Group shape={btnShape}>
-          {messageTipElement}
+          {renderMessageTipElement()}
           <FloatButton
-            icon={<div className='floatKefuButtonIcon'>{floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage'} src={floatIconImage} alt='chat' /> : <CommentOutlined />}</div>}
+            icon={<div className='floatKefuButtonIcon'>{floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage squareShap'} src={floatIconImage} alt='chat' /> : <CommentOutlined />}</div>}
             type="primary"
             shape={btnShape}
             style={floatButtonStyle}

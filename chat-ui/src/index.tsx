@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
+import './index.module.css';
 import reportWebVitals from './reportWebVitals';
-import { IsDev, getQueryParamValue, isDesktopDevice, isDesktopUA, isIframe, isMockDevice } from './utils/utils';
+import { IsDev, getQueryParamValue, IsIframe, getHttpProtocol } from './utils/utils';
 import { decryptString, encryptString } from './utils/crypto';
 import { AppConf } from './global';
 import App from './App';
@@ -10,9 +10,27 @@ import chalk from 'chalk';
 import "./libs/chatui-icons.js";
 
 const isDev = IsDev();
+const isIframe = IsIframe();
+
+var customViewportCorrectionVariable = 'vh';
+function setViewportProperty(doc: HTMLElement) {
+  var prevClientHeight: number;
+  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
+  function handleResize() {
+    var clientHeight = doc.clientHeight;
+    if (clientHeight === prevClientHeight) return;
+    requestAnimationFrame(function updateViewportHeight() {
+      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
+      prevClientHeight = clientHeight;
+    });
+  }
+  handleResize();
+  return handleResize;
+}
+window.addEventListener('resize', setViewportProperty(document.documentElement));
 
 //后缀不要加/
-const apiURL = window.parent.location.protocol + "//api.im.mixbench.net/v1"
+const apiURL = getHttpProtocol() + "//api.im.mixbench.net/v1"
 
 const confErrorAlert = () => {
   console.log(chalk.yellow("window.LICAT_KEFU has no configuration value"))
@@ -35,6 +53,7 @@ const checkSlogan = (slogan: string | undefined): boolean => {
 
 //从url中读取配置
 const getConfFromUrl = (): AppConf | undefined => {
+  if (window.location.href === "about:srcdoc") return undefined
   const paramsStr = getQueryParamValue("licat")
   if (paramsStr) {
     try {
@@ -52,6 +71,8 @@ const getConfFromUrl = (): AppConf | undefined => {
 
 //从父页面读取配置
 const getConfFromParent = (): AppConf | undefined => {
+  //前提必须是子页面
+  if (!isIframe) return undefined
   const fn = window.parent.LICAT_KEFU?.getChatAppConf
   if (typeof fn === 'function') {
     let conf = fn()
@@ -63,20 +84,20 @@ const getConfFromParent = (): AppConf | undefined => {
 //从本地读取配置
 const getConfFromLocal = (): AppConf | undefined => {
   //前提是不能是子页面
-  if (isIframe()) return undefined
+  if (isIframe) return undefined
   if (!window.LICAT_KEFU) {
     confErrorAlert()
     return
   }
   if (Object.prototype.toString.call(window.LICAT_KEFU) !== "[object Object]") return
-  const defaultConf: AppConf = {
-    referer: window.location.href,
-    projectUid: "",
-  }
   //如果是本地配置，必须配置口号
   //slogan检查
   if (!checkSlogan(window.LICAT_KEFU?.slogan)) {
     return
+  }
+  const defaultConf: AppConf = {
+    referer: window.location.href,
+    projectUid: "",
   }
   const conf: AppConf = Object.assign(defaultConf, window.LICAT_KEFU)
   window.LICAT_KEFU = conf
@@ -85,16 +106,16 @@ const getConfFromLocal = (): AppConf | undefined => {
 
 const startup = () => {
   //主要用于防止某些人使用电脑进行伪装访问
-  if (!isDev && isMockDevice()) {
-    return
-  }
+  // if (!isDev && isMockMoblieDevice()) {
+  //   return
+  // }
 
   //准备工作
-  // 优先从父页面中读取
-  let conf = getConfFromParent()
+  // 优先从url中读取
+  let conf = getConfFromUrl()
   if (!conf) {
-    //再从url中读取
-    conf = getConfFromUrl()
+    //再从父页面中读取
+    conf = getConfFromParent()
     if (!conf) {
       //再从本地读取
       conf = getConfFromLocal()
@@ -103,7 +124,6 @@ const startup = () => {
       }
     }
   }
-
   //类型检查
   if (Object.prototype.toString.call(conf) !== "[object Object]") return
   if (!conf.projectUid) {

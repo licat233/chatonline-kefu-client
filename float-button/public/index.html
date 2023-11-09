@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
   <meta name="viewport"
-  content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover" />
+    content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="description" content="Web site created using create-react-app" />
   <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
@@ -27,7 +27,17 @@
   <style>
     /* @import url(//fonts.googleapis.com/css?family=Lato:300:400); **/
 
+    html {
+      height: 100vh;
+      max-height: var(--full-height) !important;
+      min-height: var(--full-height) !important;
+      height: var(--full-height) !important;
+    }
+
     body {
+      height: 100%;
+      min-height: 100%;
+      max-height: 100%;
       margin: 0;
     }
 
@@ -45,11 +55,24 @@
       color: #333333;
     }
 
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-content: center;
+      align-items: center;
+      height: 100%;
+    }
+
     .header {
       position: relative;
       text-align: center;
       background: linear-gradient(60deg, rgba(84, 58, 183, 1) 0%, rgba(0, 172, 193, 1) 100%);
       color: white;
+      height: 80%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .logo {
@@ -61,10 +84,17 @@
     }
 
     .inner-header {
-      height: 65vh;
+      height: 65%;
       width: 100%;
       margin: 0;
       padding: 0;
+      display: flex;
+      justify-items: center;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+      flex-direction: column;
+      gap: 2rem;
     }
 
     .flex {
@@ -75,10 +105,21 @@
       text-align: center;
     }
 
+    .code {
+      height: auto;
+      display: flex;
+      align-content: center;
+      width: 80%;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin: 0 auto;
+    }
+
     .waves {
       position: relative;
       width: 100%;
-      height: 15vh;
+      height: 100%;
       margin-bottom: -7px;
       /*Fix for safari gap*/
       min-height: 100px;
@@ -87,7 +128,7 @@
 
     .content {
       position: relative;
-      height: 20vh;
+      height: 20%;
       text-align: center;
       background-color: white;
     }
@@ -148,44 +189,55 @@
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div class="container">
+    <div class="header">
+      <!--Content before waves-->
+      <div class="inner-header">
+        <div class="flex">
+          <!--Just the logo.. Don't mind this-->
+          <img src="https://licat-store.oss-cn-hongkong.aliyuncs.com/logo/licat-logo.svg" type="image/svg+xml"
+            width="50px" height="50px" style="background-color: #fff;border-radius: 50%;padding: 2px;margin:10px">
+          <h1>Chat Online Demo</h1>
+        </div>
+        <div class="code">
+          <code>
+            <script>
+              document.writeln(window.navigator.platform, "<br/>", navigator.userAgent)
+            </script>
+          </code>
+        </div>
+      </div>
 
-  <div class="header">
-    <!--Content before waves-->
-    <div class="inner-header flex">
-      <!--Just the logo.. Don't mind this-->
-      <img src="https://licat-store.oss-cn-hongkong.aliyuncs.com/logo/licat-logo.svg" type="image/svg+xml" width="50px"
-        height="50px" style="background-color: #fff;border-radius: 50%;padding: 2px;margin:10px">
-      <h1>Chat Online Demo</h1>
+      <!--Waves Container-->
+      <div>
+        <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+          viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
+          <defs>
+            <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
+          </defs>
+          <g class="parallax">
+            <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7" />
+            <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+            <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+            <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
+          </g>
+        </svg>
+      </div>
+      <!--Waves end-->
+
     </div>
+    <!--Header ends-->
 
-    <!--Waves Container-->
-    <div>
-      <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-        viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
-        <defs>
-          <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
-        </defs>
-        <g class="parallax">
-          <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7" />
-          <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
-          <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
-          <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
-        </g>
-      </svg>
+    <!--Content starts-->
+    <div class="content flex">
+      <p>By.Licat | 2023 </p>
     </div>
-    <!--Waves end-->
-
-  </div>
-  <!--Header ends-->
-
-  <!--Content starts-->
-  <div class="content flex">
-    <p>By.Licat | 2023 </p>
   </div>
   <script>
     window.LICAT_KEFU = {
       slogan: "光平哥哥真帥",
-      chatUrl: "http://127.0.0.1:3001/",
+      useChat: true,
+      chatUrl: "http://192.168.101.2:3001/",
       projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
     };
   </script>

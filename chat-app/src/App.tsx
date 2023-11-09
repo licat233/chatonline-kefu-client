@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions, Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, isIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp, isLineUrl } from './utils/utils';
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, IsIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp, isLineUrl } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
@@ -27,7 +27,7 @@ function App(props: AppProps) {
     const cacheMessagesKey = keyPrefix + "messages";
     const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
     const maxInputLength = 800;
-    const isChildrenIframe = isIframe()
+    const isChildrenIframe = IsIframe()
     const notSupportText = "Not supported"
     const [showChatInputTool, setShowChatInputTool] = useState<boolean>(true);
     const [placeholdertext, setPlaceholdertext] = useState<string>("Aa");
@@ -119,6 +119,8 @@ function App(props: AppProps) {
         historyScrollToBottom();
     }
     window.LICAT_KEFU.openChatCallback = openChatCallback
+
+
     useEffect(() => {
         if (isFirstLoad) {
             historyScrollToBottom();

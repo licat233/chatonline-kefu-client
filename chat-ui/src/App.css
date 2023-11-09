@@ -4,6 +4,10 @@
     --bkg-color2: #396bf2;
 }
 
+audio {
+    height: 0;
+}
+
 /* 使用省略号隐藏多余文本 */
 .text-overflow {
     white-space: nowrap;
@@ -86,7 +90,7 @@
 }
 
 .chat-header-name-name {
-    font-size: 20px;
+    font-size: 18px;
     line-height: 20px;
     height: 20px;
 }
@@ -254,14 +258,14 @@
     background-color: #f5f5f5;
 }
 
-.addlineimage{
+.addlineimage {
     width: 100%;
     max-width: 200px;
     -webkit-user-drag: none;
     user-select: none;
 }
 
-.addlineimage>img{
+.addlineimage>img {
     -webkit-user-drag: none;
     user-select: none;
 }

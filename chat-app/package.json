@@ -15,6 +15,7 @@
     "@types/react-dom": "^18.2.13",
     "alert": "^6.0.0",
     "antd": "^5.10.2",
+    "autoprefixer": "^10.4.16",
     "autosize": "^6.0.1",
     "axios": "^1.5.1",
     "chalk": "^5.3.0",
@@ -28,6 +29,8 @@
     "get-urls": "^12.1.0",
     "jquery": "^3.7.1",
     "layui": "^2.8.18-rc.1",
+    "postcss-nested": "^6.0.1",
+    "postcss-viewport-height-correction": "^1.1.1",
     "rc-virtual-list": "^3.11.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -68,6 +71,8 @@
   "devDependencies": {
     "@types/autosize": "^4.0.1",
     "@types/url-regex-safe": "^1.0.1",
+    "postcss": "^8.4.31",
+    "postcss-cli": "^10.1.0",
     "url-loader": "^4.1.1"
   }
 }
