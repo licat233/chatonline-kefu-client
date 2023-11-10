@@ -452,10 +452,9 @@ function App(appProps: AppProps) {
   }
 
   useEffect(() => {
+    window.LICAT_KEFU.openChatWindow = onClickButton;
     if (bindElement.current) {
-      bindElement.current.addEventListener("click", () => {
-        onClickButton()
-      })
+      bindElement.current.addEventListener("click", onClickButton)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

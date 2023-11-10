@@ -34,6 +34,8 @@ export interface CurrentAppConf {
     example?: CurrentAppConf,
     //help
     help?: () => void,
+    //打開聊天窗口
+    openChatWindow?: ()=> void,
 }
 
 export interface ChatAppConf {
