@@ -1,7 +1,7 @@
 import Chat, { Bubble, Button, Flex, MessageProps, Video, toast, useMessages, Card, FileCard, Divider, Carousel, Tag, ListItem } from '@chatui/core';
 import type { QuickReplyItemProps, MessageProps as UiMessage } from '@chatui/core';
 import '@chatui/core/dist/index.css';
-import { API, AppProps } from './global';
+import { API, AppProps } from './model';
 import { IsDev, addAnchorTagsToUrls, convertGoTimestamp, createCallFrequencyChecker, getHoursFromTimeToNow, getMessageNotifyContent, getMessageType, getOperatingSystem, getReferer, goodbye, IsIframe, isLineUrl, joinPath, loadLastLoginTime, newUuid, openUniquePage, playSound, replaceHtml, showNotification, trim } from './utils/utils';
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, Message as WkMessage, MessageText, PullMode, SyncOptions } from 'wukongimjssdk';
 import { useEffect, useRef, useState } from 'react';
@@ -12,6 +12,12 @@ import chalk from 'chalk';
 import "./App.css";
 import { Image as AntdImage } from 'antd';
 import { EnvironmentFilled, SafetyCertificateFilled } from '@ant-design/icons';
+
+enum NotifyMessageType {
+  Msg = "message",
+  Tip = "tip",
+  Preset = "preset"
+}
 
 const isDev = IsDev()
 const isIframe = IsIframe()
@@ -149,7 +155,8 @@ const App = (props: AppProps) => {
         return
       }
       const msg = autoReplyMessages.current[autoReplyIndex.current];
-      handleReceive(msg)
+      appendMsg(msg)
+      notifyMessage(msg.content.text || "[新訊息]", NotifyMessageType.Preset);
       setTyping(true)
       autoReplyIndex.current++
       autoReplyDuration.current += 2000
@@ -340,22 +347,22 @@ const App = (props: AppProps) => {
   }
 
 
-  const sendMessageToParent = (messageBody: string) => {
+  const sendMessageToParent = (messageBody: string, messageType?: NotifyMessageType) => {
     const parentUrl = window.top?.location.href
     if (!parentUrl) return
     const msg: API.PostMessage = {
       content: messageBody,
       source: "chatOnlineApp",
-      type: "message",
+      type: messageType,
     }
     window.parent.postMessage(msg); // 这里需要根据实际情况设置目标 origin
   };
 
-  const notifyMessage = (body: string) => {
+  const notifyMessage = (body: string, type?: NotifyMessageType) => {
     if (!body) return
     if (isChildrenIframe) {
       //如果是iframe页面，应该通知父页面
-      sendMessageToParent(body)
+      sendMessageToParent(body, type)
     }
     showNotification("New message", {
       body: replaceHtml(body),
@@ -619,11 +626,6 @@ const App = (props: AppProps) => {
       }
       return false
     })
-  }
-
-  const handleReceive = (uiMsg: UiMessage) => {
-    appendMsg(uiMsg)
-    notifyMessage(uiMsg.content.text || "[新訊息]");
   }
 
   const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次

@@ -6,7 +6,13 @@ import { DrawerStyles } from 'antd/es/drawer/DrawerPanel';
 import { IsDev, addQueryParam, getRandomItem, getReferer, getSupportList, isDesktopUA, openUniquePage, removeProtocol } from './utils/utils';
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
-import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./global";
+import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./model";
+
+enum NotifyMessageType {
+  Msg = "message",
+  Tip = "tip",
+  Preset = "preset",
+}
 
 const isDev = IsDev()
 const isPC = isDesktopUA()
@@ -226,7 +232,7 @@ function App(appProps: AppProps) {
     switchChatWindow()
   }
 
-  const notifyMessage = (content: string | undefined) => {
+  const notifyMessage = (content: string | undefined, type?: string) => {
     if (!content) return;
     //判断当前窗口是否是打开状态，如果是打开状态，则不用通知
     if (openChatWindow) return;
@@ -235,6 +241,7 @@ function App(appProps: AppProps) {
     unreadMessage.count = unreadMessage.count + 1
     unreadMessage.lastMsg = content
     setUnreadMessage({ ...unreadMessage });
+    if (type === NotifyMessageType.Preset) return
     localStorage.setItem(unreadMsgCacheKey, JSON.stringify(unreadMessage))
   }
 
@@ -245,7 +252,7 @@ function App(appProps: AppProps) {
     const msg = data as PostMessage
     if (msg.source !== "chatOnlineApp") return
     if (!msg.content) return
-    notifyMessage(msg.content)
+    notifyMessage(msg.content, msg.type)
   };
 
   const iframeInsertContent = (content: string): boolean => {

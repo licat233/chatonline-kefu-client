@@ -6,7 +6,7 @@ import { IsDev, getHttpProtocol, getQueryParamValue, IsIframe, setViewportProper
 import App from "./App";
 import { decryptString, encryptString } from './utils/crypto';
 import { ConfigProvider } from 'antd';
-import { AppConf } from './global';
+import { AppConf } from './model';
 import chalk from 'chalk';
 
 setViewportPropertyOnResize();

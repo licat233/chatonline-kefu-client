@@ -9,7 +9,7 @@ import autosize from "autosize";
 import { Button, Image, Popover, Spin, Tooltip, message } from "antd";
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
-import { API, AppProps, AutoMessage } from './global';
+import { API, AppProps, AutoMessage } from './model';
 import chalk from 'chalk';
 import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
 

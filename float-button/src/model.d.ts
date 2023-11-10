@@ -7,7 +7,7 @@ declare global {
 export interface PostMessage {
     content: string,
     source?: string,
-    type?: "message" | "tip",
+    type?: NotifyMessageType,
 }
 
 export interface CurrentAppConf {
@@ -35,7 +35,7 @@ export interface CurrentAppConf {
     //help
     help?: () => void,
     //打開聊天窗口
-    openChatWindow?: ()=> void,
+    openChatWindow?: () => void,
 }
 
 export interface ChatAppConf {

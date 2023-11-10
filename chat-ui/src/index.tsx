@@ -4,7 +4,7 @@ import './index.module.css';
 import reportWebVitals from './reportWebVitals';
 import { IsDev, getQueryParamValue, IsIframe, getHttpProtocol, setViewportPropertyOnResize } from './utils/utils';
 import { decryptString, encryptString } from './utils/crypto';
-import { AppConf } from './global';
+import { AppConf } from './model';
 import App from './App';
 import chalk from 'chalk';
 import "./libs/chatui-icons.js";

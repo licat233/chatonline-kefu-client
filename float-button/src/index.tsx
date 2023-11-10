@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
 import { IsDev, getReferer, setViewportPropertyOnResize } from './utils/utils';
-import { CurrentAppConf } from './global';
+import { CurrentAppConf } from './model';
 import { help } from './docs';
 
 setViewportPropertyOnResize();
