@@ -1,32 +1,69 @@
 <?php
-
 $baseUrl = "http://licat-store.oss-cn-hongkong.aliyuncs.com/lib/";
-
 // 定义路由规则
 $routes = [
-    '/' => 'homePageHandler',
+    '/' => 'defaultPageHandler',
+    '/case' => 'casePageHandler',
+    '/chat' => 'chatPageHandler'
 ];
 
 // 获取当前 URL
-$requestUri = rtrim($_SERVER['REQUEST_URI'], '/'); // 移除末尾的斜杠
+$requestUri = $_SERVER['REQUEST_URI'];
 
-// 根据请求的路径调用相应的处理程序
-if (array_key_exists($requestUri, $routes)) {
-    $handler = $routes[$requestUri];
-    // 调用处理程序
-    call_user_func($handler);
-} else {
-    homePageHandler();
+routeRequest($requestUri, $routes);
+
+// 匹配请求路径并调用相应处理程序的函数
+function routeRequest($requestUri, $routes)
+{
+    $path = $requestUri;
+    while ($path !== '/' && $path !== '') {
+        //原字符匹配
+        if (array_key_exists($path, $routes)) {
+            $handler = $routes[$path];
+            // 调用处理程序
+            call_user_func($handler);
+            return; // 匹配成功，结束函数
+        }
+
+        // 判断最后一个字符是否是 "/"
+        $path2 = removeLastSegment($path); //去除"/"后面的字符，再匹配一次
+        if ($path !== $path2) { //不一样，那就匹配一次
+            $path = $path2;
+            if (array_key_exists($path, $routes)) {
+                $handler = $routes[$path];
+                // 调用处理程序
+                call_user_func($handler);
+                return; // 匹配成功，结束函数
+            }
+        }
+
+        //匹配父级目录
+        $path = rtrim($path, '/');
+    }
+
+    // 如果循环结束仍然没有匹配成功，则调用默认页面处理程序
+    defaultPageHandler();
 }
 
-function homePageHandler()
+function defaultPageHandler()
+{
+    echo file_get_contents("./defaultPage.html");
+}
+
+function casePageHandler()
+{
+    echo file_get_contents("./casePage.html");
+}
+
+function chatPageHandler()
 {
     global $baseUrl;
     echo '
     <script>
     window.LICAT_KEFU = {
         slogan: "光平哥哥真帥",
-        projectUid: "dcf3c51e871a446294f9c89bbe2295f6",
+        projectUid: "8ad320d2e70d49bc9ef0459dd476c39d",
+        autoMsgs: ["你好，請問有什麼可以幫你？", ["色斑問題", "皺紋問題", "痘痘問題", "肌膚暗黃", "肌膚敏感", "肌膚鬆弛"], "你多大年齡了？", "是本人還是家屬？", "這邊諮詢訊息是保密的，請放心交流", "在嗎？", "還在嗎？我在等你回復", "你好，能看到我的訊息嗎？"],
         conversionEvent2: () => { }
     };
     </script>
@@ -62,4 +99,18 @@ function updateUrlProtocol($url, $protocol)
         $newUrl = $protocol . $url;
     }
     return $newUrl;
+}
+
+function removeLastSegment($str)
+{
+    $lastSlashPos = strrpos($str, '/');
+
+    if ($lastSlashPos !== false) {
+        // 去除最后一个 "/" 后面的部分
+        $newStr = substr($str, 0, $lastSlashPos + 1);
+        return $newStr;
+    } else {
+        // 如果字符串中没有 "/"，则保持原样
+        return $str;
+    }
 }
