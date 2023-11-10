@@ -12,7 +12,15 @@ $requestUri = $_SERVER['REQUEST_URI'];
 
 routeRequest($requestUri, $routes);
 
-// 匹配请求路径并调用相应处理程序的函数
+// 匹配请求路径并调用相应处理程序的函数,
+// 匹配逻辑，比如: 请求路径为 "/about/company/me"
+// 匹配顺序：
+// "/about/company/me"
+// "/about/company/"
+// "/about/company"
+// "/about/"
+// "/about"
+// "/"
 function routeRequest($requestUri, $routes)
 {
     $path = $requestUri;
