@@ -2,32 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.module.css';
 import reportWebVitals from './reportWebVitals';
-import { IsDev, getQueryParamValue, IsIframe, getHttpProtocol } from './utils/utils';
+import { IsDev, getQueryParamValue, IsIframe, getHttpProtocol, setViewportPropertyOnResize } from './utils/utils';
 import { decryptString, encryptString } from './utils/crypto';
 import { AppConf } from './global';
 import App from './App';
 import chalk from 'chalk';
 import "./libs/chatui-icons.js";
 
+setViewportPropertyOnResize();
+
 const isDev = IsDev();
 const isIframe = IsIframe();
-
-var customViewportCorrectionVariable = 'vh';
-function setViewportProperty(doc: HTMLElement) {
-  var prevClientHeight: number;
-  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
-  function handleResize() {
-    var clientHeight = doc.clientHeight;
-    if (clientHeight === prevClientHeight) return;
-    requestAnimationFrame(function updateViewportHeight() {
-      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
-      prevClientHeight = clientHeight;
-    });
-  }
-  handleResize();
-  return handleResize;
-}
-window.addEventListener('resize', setViewportProperty(document.documentElement));
 
 //后缀不要加/
 const apiURL = getHttpProtocol() + "//api.im.mixbench.net/v1"

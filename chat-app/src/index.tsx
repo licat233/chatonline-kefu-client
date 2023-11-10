@@ -2,32 +2,17 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.module.css';
 import reportWebVitals from './reportWebVitals';
-import { IsDev, getHttpProtocol, getQueryParamValue, IsIframe } from './utils/utils';
+import { IsDev, getHttpProtocol, getQueryParamValue, IsIframe, setViewportPropertyOnResize } from './utils/utils';
 import App from "./App";
 import { decryptString, encryptString } from './utils/crypto';
 import { ConfigProvider } from 'antd';
 import { AppConf } from './global';
 import chalk from 'chalk';
 
+setViewportPropertyOnResize();
+
 const isDev = IsDev();
 const isIframe = IsIframe();
-
-var customViewportCorrectionVariable = 'vh';
-function setViewportProperty(doc: HTMLElement) {
-  var prevClientHeight: number;
-  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
-  function handleResize() {
-    var clientHeight = doc.clientHeight;
-    if (clientHeight === prevClientHeight) return;
-    requestAnimationFrame(function updateViewportHeight() {
-      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
-      prevClientHeight = clientHeight;
-    });
-  }
-  handleResize();
-  return handleResize;
-}
-window.addEventListener('resize', setViewportProperty(document.documentElement));
 
 //后缀不要加/
 const apiURL = getHttpProtocol() + "//api.im.mixbench.net/v1"

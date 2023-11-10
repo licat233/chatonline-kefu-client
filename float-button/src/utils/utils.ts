@@ -163,3 +163,22 @@ export function removeProtocol(url: string): string {
     const pattern = /^https?:/;
     return url.replace(pattern, '');
 }
+
+export function setViewportPropertyOnResize(): void {
+    var customViewportCorrectionVariable = 'vh';
+    function setViewportProperty(doc: HTMLElement) {
+        var prevClientHeight: number;
+        var customVar = '--' + (customViewportCorrectionVariable || 'vh');
+        function handleResize() {
+            var clientHeight = doc.clientHeight;
+            if (clientHeight === prevClientHeight) return;
+            requestAnimationFrame(function updateViewportHeight() {
+                doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
+                prevClientHeight = clientHeight;
+            });
+        }
+        handleResize();
+        return handleResize;
+    }
+    window.addEventListener('resize', setViewportProperty(document.documentElement));
+}

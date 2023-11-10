@@ -5,26 +5,11 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import chalk from 'chalk';
 import { decryptString } from './utils/crypto';
-import { IsDev, getReferer } from './utils/utils';
+import { IsDev, getReferer, setViewportPropertyOnResize } from './utils/utils';
 import { CurrentAppConf } from './global';
 import { help } from './docs';
 
-var customViewportCorrectionVariable = 'vh';
-function setViewportProperty(doc: HTMLElement) {
-  var prevClientHeight: number;
-  var customVar = '--' + (customViewportCorrectionVariable || 'vh');
-  function handleResize() {
-    var clientHeight = doc.clientHeight;
-    if (clientHeight === prevClientHeight) return;
-    requestAnimationFrame(function updateViewportHeight() {
-      doc.style.setProperty(customVar, (clientHeight * 0.01) + 'px');
-      prevClientHeight = clientHeight;
-    });
-  }
-  handleResize();
-  return handleResize;
-}
-window.addEventListener('resize', setViewportProperty(document.documentElement));
+setViewportPropertyOnResize();
 
 const isDev = IsDev()
 
