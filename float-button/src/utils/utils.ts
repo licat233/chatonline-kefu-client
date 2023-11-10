@@ -182,3 +182,9 @@ export function setViewportPropertyOnResize(): void {
     }
     window.addEventListener('resize', setViewportProperty(document.documentElement));
 }
+
+export const preloadedImage = (src?: string) => {
+    if(!src) return
+    const img = new Image();
+    img.src = src;
+}

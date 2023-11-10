@@ -83,8 +83,11 @@
   visibility: hidden;
 }
 
+.desktop .floatMessageTipRoot {
+  cursor: pointer;
+}
 
-.floatMessageTip .ant-tooltip-inner {
+.floatMessageTipRoot .ant-tooltip-inner {
   border-radius: 13px;
   -webkit-border-radius: 13px;
   -moz-border-radius: 13px;

@@ -12,7 +12,7 @@ const isDev = IsDev()
 const isPC = isDesktopUA()
 
 function App(appProps: AppProps) {
-  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, bindId, colorPrimary, btnIcon, tipColor } = appProps.conf
+  const { projectUid, chatUrl, cvUrls, useChat, newPage, shape, bindId, colorPrimary, btnIcon, hideBtn, tipColor } = appProps.conf
   const unreadMsgCacheKey = "unreadMessages" + projectUid;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
@@ -20,24 +20,25 @@ function App(appProps: AppProps) {
   const cvUrl = useRef("")
   const [messageApi, contextHolder] = message.useMessage();
   const firstLoaded = useRef(false)
-  const loadSuccessMark = useRef(false)
+  const chatappLoadSuccessMark = useRef(false)
   const firstOpenChat = useRef(false)
   const stopNotify = useRef(false)
   const [floatIconImage, setFloatIconImage] = useState(btnIcon)
   const bindElement = useRef<HTMLElement | null>((bindId && document.getElementById(bindId)) || null)
   const [popupMask, setPopupMask] = useState<boolean>(!isPC)
+  const floatButtonRef = useRef<(HTMLAnchorElement & HTMLButtonElement) | null>(null)
+  const [showMessageTip, setShowMessageTip] = useState<boolean>(false);
+  const [showFloatButton, setShowFloatButton] = useState<boolean>(false);
 
-  const [floatButtonStyle, setFloatButtonStyle] = useState<React.CSSProperties>({ display: useChat && !newPage ? "none" : "" })
-
-  const showFloatButton = (data?: any) => {
-    setFloatButtonStyle({ ...floatButtonStyle, display: "" });
+  window.LICAT_KEFU.appLoadedCallback = (data?: any) => {
+    setShowMessageTip(true)
+    !hideBtn && setShowFloatButton(true)
     const kefuAvatar = data?.kefu?.avatar
     if (kefuAvatar) {
       setFloatIconImage(kefuAvatar)
     }
+    chatappLoadSuccessMark.current = true;
   }
-
-  window.LICAT_KEFU.appLoadedCallback = showFloatButton
 
   if (!useChat) {
     if (cvUrls && cvUrls.length !== 0) {
@@ -211,7 +212,7 @@ function App(appProps: AppProps) {
       return
     }
     //如果加载失败，则在标签页打开
-    if (!loadSuccessMark.current) {
+    if (!chatappLoadSuccessMark.current) {
       openChatPage()
       return
     }
@@ -229,7 +230,7 @@ function App(appProps: AppProps) {
     if (!content) return;
     //判断当前窗口是否是打开状态，如果是打开状态，则不用通知
     if (openChatWindow) return;
-    if (stopNotify.current) return
+    if (stopNotify.current) return; //窗口打开的时候，不用通知
     //加入未读消息列表
     unreadMessage.count = unreadMessage.count + 1
     unreadMessage.lastMsg = content
@@ -303,15 +304,12 @@ function App(appProps: AppProps) {
           if (!content) {
             throw new Error("request content fail:" + chatUrl)
           }
-          if (iframeInsertContent(content)) {
-            loadSuccessMark.current = true
-          } else {
+          if (!iframeInsertContent(content)) {
             if (isDev) {
               console.error("加载iframe失败");
             }
           }
           autoOpenChatWindow()
-
           //如果是pc端，10秒钟后自动弹出聊天窗口
           // if (isDesktopUA() && window.innerWidth > 768) {
           //   setTimeout(() => {
@@ -322,7 +320,7 @@ function App(appProps: AppProps) {
           // }
         })
         .catch((err: any) => {
-          loadSuccessMark.current = false
+          chatappLoadSuccessMark.current = false
           if (isDev) {
             console.error(err.message);
           }
@@ -400,6 +398,7 @@ function App(appProps: AppProps) {
         onCancel={() => { switchChatWindow(false) }}
         onOk={() => { switchChatWindow(false) }}
         footer={null}
+        zIndex={2000}
       >
         <iframe
           ref={iframeRef}
@@ -416,14 +415,16 @@ function App(appProps: AppProps) {
   }
 
   const renderMessageTipElement = () => {
-    if (openChatWindow) return <></>
+    if (openChatWindow || !showMessageTip) return <></>
     return (<div className='floatKefuTipBox'>
       <Tooltip
         placement="topLeft"
-        rootClassName="floatMessageTip"
+        rootClassName="floatMessageTipRoot"
+        className="floatMessageTip"
+        openClassName="floatMessageTipOpen"
         color={tipColor}
         open={unreadMessage.count > 0}
-        arrow={true}
+        arrow={!hideBtn}
         autoAdjustOverflow={true}
         zIndex={899}
         title={<span onClick={onClickButton}><MessageOutlined />&nbsp;{unreadMessage.lastMsg}</span>}
@@ -431,6 +432,23 @@ function App(appProps: AppProps) {
         <div className='floatKefuTipMark'></div>
       </Tooltip>
     </div>)
+  }
+
+  const renderFloatButton = () => {
+    if (!showFloatButton) return <></>
+    return (<FloatButton.Group shape={btnShape}>
+      {renderMessageTipElement()}
+      <FloatButton
+        icon={<div className='floatKefuButtonIcon'>{floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage squareShap'} src={floatIconImage} alt='chat' /> : <CommentOutlined />}</div>}
+        type="primary"
+        shape={btnShape}
+        badge={{ count: unreadMessage.count, overflowCount: 999 }}
+        onClick={onClickButton}
+        target="__blank"
+        className='floatKefuButton'
+        ref={floatButtonRef}
+      />
+    </FloatButton.Group>)
   }
 
   useEffect(() => {
@@ -447,19 +465,7 @@ function App(appProps: AppProps) {
     <section>
       <ConfigProvider theme={{ token: { colorPrimary: colorPrimary } }} drawer={{ styles: drawerStyles }}>
         {contextHolder}
-        {<FloatButton.Group shape={btnShape}>
-          {renderMessageTipElement()}
-          <FloatButton
-            icon={<div className='floatKefuButtonIcon'>{floatIconImage ? <img className={btnShape === "circle" ? 'floatKefuBtnImage circleShap' : 'floatKefuBtnImage squareShap'} src={floatIconImage} alt='chat' /> : <CommentOutlined />}</div>}
-            type="primary"
-            shape={btnShape}
-            style={floatButtonStyle}
-            badge={{ count: unreadMessage.count, overflowCount: 999 }}
-            onClick={onClickButton}
-            target="__blank"
-            className='floatKefuButton'
-          />
-        </FloatButton.Group>}
+        {renderFloatButton()}
         {renderChatWindow()}
       </ConfigProvider >
     </section >

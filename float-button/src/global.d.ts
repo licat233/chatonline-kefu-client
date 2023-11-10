@@ -23,6 +23,7 @@ export interface CurrentAppConf {
     bindId?: string, //绑定的客服按钮id
     colorPrimary?: string, //主题色
     btnIcon?: string, //按钮图标url
+    hideBtn?: boolean, //隐藏客服按钮
     tipColor?: string,  //通知卡片颜色
     openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义
     conversionEvent1?: () => void, //用户初次转化事件，由用户自定义

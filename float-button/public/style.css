@@ -26,6 +26,11 @@ p {
     color: #333333;
 }
 
+::-webkit-scrollbar {
+    display: none;
+    /* 隐藏滚动条 */
+}
+
 .container {
     display: flex;
     flex-direction: column;
@@ -160,7 +165,7 @@ p {
     height: 60px;
 }
 
-.kefubtn button:active{
+.kefubtn button:active {
     background-color: aqua;
     box-shadow: none;
     box-shadow: 0 0 5px 1px #fff;
