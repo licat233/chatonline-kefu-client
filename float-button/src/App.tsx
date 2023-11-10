@@ -392,11 +392,11 @@ function App(appProps: AppProps) {
         className='chatModalWindow'
         rootClassName="chatModalWindowRoot"
         wrapClassName="chatModalWindowWrap"
-        closable={!popupMask}
+        closable={false}
         closeIcon={<CloseCircleTwoTone style={{ fontSize: "28px" }} />}
         mask={popupMask}
         open={openChatWindow}
-        maskClosable={popupMask}
+        maskClosable={true}
         forceRender={true}
         destroyOnClose={false}
         width={"100%"}
