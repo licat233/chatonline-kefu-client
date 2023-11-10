@@ -52,7 +52,8 @@ const App = (props: AppProps) => {
   const stopAutoCloseSummary = useRef<boolean>(false)
   const startAutoCloseSummary = useRef<boolean>(false)
   const isFirstOpen = useRef<boolean>(true)
-  const visitorHasReplied = useRef<boolean>(false)
+  const visitorMessageCount = useRef<number>(0)
+  const kefuMessageCount = useRef<number>(0)
 
   const getAvatarUrl = (uid?: string) => {
     uid = uid ?? visitorLoginResp.current.kefu_info.uid
@@ -102,9 +103,6 @@ const App = (props: AppProps) => {
 
   const renderQuestionCard = (titles: string[]) => {
     const clickHandler = (title: string) => {
-      // const msg = newUIMessage("text", { text: title }, "right")
-      // appendMsg(msg)
-      // visitorHasReplied.current = true;
       handleSend("text", title)
     }
     return (<div>
@@ -121,7 +119,6 @@ const App = (props: AppProps) => {
   const autoReplyIndex = useRef<number>(0)
   const autoReplyTimer = useRef<any>()
   const autoReplyDuration = useRef<number>(3000)
-
   const startupAutoReply = () => {
     if (Array.isArray(autoMsgs)) {
       autoReplyMessages.current = []
@@ -136,19 +133,23 @@ const App = (props: AppProps) => {
     autoReplyEvent()
   }
 
+  // 自动回复消息，规则：
+  // 如果游客回复了消息，则立即停止自动回复
+  // 如果客服回复了消息，则立即停止自动回复
+  // 预设的消息已经回复完毕
   const autoReplyEvent = () => {
-    if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
+    if (kefuMessageCount.current > 1 || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
       clearTimeout(autoReplyTimer.current)
       return
     }
     autoReplyTimer.current = setTimeout(() => {
-      if (visitorHasReplied.current || autoReplyIndex.current >= autoReplyMessages.current.length) {
+      if (kefuMessageCount.current > 1 || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
+        setTyping(false)
         clearTimeout(autoReplyTimer.current)
         return
       }
       const msg = autoReplyMessages.current[autoReplyIndex.current];
-      appendMsg(msg)
-      notifyMessage(msg.content.text || "[新訊息]");
+      handleReceive(msg)
       setTyping(true)
       autoReplyIndex.current++
       autoReplyDuration.current += 2000
@@ -392,9 +393,11 @@ const App = (props: AppProps) => {
     }
 
     //转化消息体
-    const uiMsgs = wkMsgs.map(wkMsg => {
-      if (!visitorHasReplied.current && isMsgFromSelf(wkMsg)) {
-        visitorHasReplied.current = true;
+    const uiMsgs = wkMsgs.map((wkMsg, index) => {
+      if (isMsgFromSelf(wkMsg)) {
+        visitorMessageCount.current++
+      } else {
+        kefuMessageCount.current++
       }
       return convertToUIMssage(wkMsg)
     });
@@ -450,10 +453,11 @@ const App = (props: AppProps) => {
       const uiMsg = convertToUIMssage(message)
       appendMsg(uiMsg)
       //消息提醒
-      if (!isMsgFromSelf(message)) {
+      if (isMsgFromSelf(message)) {
+        visitorMessageCount.current++
+      } else {
+        kefuMessageCount.current++
         notifyMessage(getMessageNotifyContent(message));
-      }else{
-        visitorHasReplied.current = true;
       }
     });
     // 提供频道内消息同步的数据源
@@ -617,6 +621,11 @@ const App = (props: AppProps) => {
     })
   }
 
+  const handleReceive = (uiMsg: UiMessage) => {
+    appendMsg(uiMsg)
+    notifyMessage(uiMsg.content.text || "[新訊息]");
+  }
+
   const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
   const prohibitSend = useRef<boolean>(false);
 
@@ -643,7 +652,6 @@ const App = (props: AppProps) => {
       return
     }
     sendSound() //播放声音
-    visitorHasReplied.current = true
   }
 
 

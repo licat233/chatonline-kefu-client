@@ -16,18 +16,16 @@ function App(appProps: AppProps) {
   const unreadMsgCacheKey = "unreadMessages" + projectUid;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [openChatWindow, setOpenChatWindow] = useState(false);
-  // const [placement, setPlacement] = useState<'left' | 'right' | 'top' | 'bottom' | undefined>("bottom")
   const [btnShape, setBtnShape] = useState<"square" | "circle">(shape || "circle");
-  // const [chatWindowSize, setChatWindowSize] = useState<Record<string, string | number | undefined>>({ width: undefined, height: undefined })
   const cvUrl = useRef("")
   const [messageApi, contextHolder] = message.useMessage();
   const firstLoaded = useRef(false)
   const loadSuccessMark = useRef(false)
   const firstOpenChat = useRef(false)
   const stopNotify = useRef(false)
-  // const [iframeHtml, setIframeHtml] = useState<string>()
   const [floatIconImage, setFloatIconImage] = useState(btnIcon)
   const bindElement = useRef<HTMLElement | null>((bindId && document.getElementById(bindId)) || null)
+  const [popupMask, setPopupMask] = useState<boolean>(!isPC)
 
   const [floatButtonStyle, setFloatButtonStyle] = useState<React.CSSProperties>({ display: useChat && !newPage ? "none" : "" })
 
@@ -117,14 +115,11 @@ function App(appProps: AppProps) {
 
   const handleResize = () => {
     const width = window.innerWidth;
+    setPopupMask(width <= 600)
     if (width <= 768) {
-      // setChatWindowSize({ width: "100%", height: "var(--height-80)" });
       setBtnShape(btnShape)
-      // setPlacement("bottom")
     } else {
-      // setChatWindowSize({ width: "375px", height: "var(--height-80)" });
       setBtnShape("square")
-      // setPlacement("right")
     }
   }
 
@@ -244,7 +239,8 @@ function App(appProps: AppProps) {
 
   const receiveMessage = (event: MessageEvent) => {
     const { data, origin } = event
-    if (origin !== window.location.origin) return
+    const msgOrigin = iframeRef.current?.contentWindow?.origin || window.location.origin;
+    if (origin !== msgOrigin) return
     const msg = data as PostMessage
     if (msg.source !== "chatOnlineApp") return
     if (!msg.content) return
@@ -380,40 +376,6 @@ function App(appProps: AppProps) {
     },
   };
 
-  //旧方案，使用drawer组件进行弹窗
-  // const renderChatWindow2 = () => {
-  //   if (!useChat || newPage) return <></>;
-  //   // if(!iframeHtml) return <></>
-  //   const allowList = getSupportList();
-  //   return (
-  //     <Drawer
-  //       className='chatDrawer'
-  //       placement={placement}
-  //       closable={false}
-  //       open={openChatWindow}
-  //       key="chatonline20231029"
-  //       forceRender={true}
-  //       width={chatWindowSize["width"]}
-  //       height={chatWindowSize["height"]}
-  //       afterOpenChange={afterOpenChange}
-  //       onClose={() => { switchChatWindow(false) }}
-  //     // mask={!isDesktopUA()}
-  //     >
-  //       <iframe
-  //         ref={iframeRef}
-  //         className='chatIframe'
-  //         width="100%"
-  //         height="100%"
-  //         allowFullScreen={true}
-  //         allow={allowList}
-  //         title='chatonline'
-  //         id={"chatIframe-" + projectUid}
-  //         // srcDoc={iframeHtml}
-  //       />
-  //     </Drawer>
-  //   )
-  // }
-
   //新方案，使用modal组件进行弹窗
   const renderChatWindow = () => {
     if (!useChat || newPage) return <></>;
@@ -425,21 +387,19 @@ function App(appProps: AppProps) {
         className='chatModalWindow'
         rootClassName="chatModalWindowRoot"
         wrapClassName="chatModalWindowWrap"
-        closable={isPC}
+        closable={!popupMask}
         closeIcon={<CloseCircleTwoTone style={{ fontSize: "28px" }} />}
-        mask={!isPC}
+        mask={popupMask}
         open={openChatWindow}
-        maskClosable={true}
+        maskClosable={popupMask}
         forceRender={true}
         destroyOnClose={false}
-        cancelText={!isPC}
         width={"100%"}
         afterOpenChange={afterOpenChange}
         afterClose={() => { switchChatWindow(false) }}
         onCancel={() => { switchChatWindow(false) }}
         onOk={() => { switchChatWindow(false) }}
         footer={null}
-      // centered={true}
       >
         <iframe
           ref={iframeRef}

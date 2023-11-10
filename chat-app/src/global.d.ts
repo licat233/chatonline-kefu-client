@@ -46,10 +46,16 @@ export namespace API {
     }
 }
 
+export interface AutoMessage {
+    type?: string,
+    text: string,
+}
+
 export interface AppConf {
     slogan?: string,
     referer: string,
     projectUid: string,
+    autoMsgs?: (string | string[])[], //自动回复的消息
     openChatCallback?: () => any, //用于父页面调用子iframe的窗口打开事件，由子页面定义，父页面调用
     conversionEvent1?: () => void, //用户初次转化事件，由用户自定义，父页面调用
     conversionEvent2?: () => void, //用户点击发送按钮时的事件，由用户自定义，子页面调用

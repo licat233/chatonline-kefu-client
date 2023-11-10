@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <base href="">
   <meta charset="utf-8" />
   <link rel="icon" href="//licat-store.oss-cn-hongkong.aliyuncs.com/web/02d33cc2973f448194abbe023f1526c9.ico" />
   <meta name="viewport"
@@ -12,167 +13,7 @@
     href="//licat-store.oss-cn-hongkong.aliyuncs.com/web/1c6d322a481941e7a3af809f2867bab9.png" />
   <link rel="manifest" href="//licat-store.oss-cn-hongkong.aliyuncs.com/web/283fbf1c1f1d40bb9cfc1bdf2663fd24.json" />
   <title>chatonline demo 1</title>
-  <style>
-    /* @import url(//fonts.googleapis.com/css?family=Lato:300:400); **/
-
-    html {
-      height: 100vh;
-      max-height: var(--full-height) !important;
-      min-height: var(--full-height) !important;
-      height: var(--full-height) !important;
-    }
-
-    body {
-      height: 100%;
-      min-height: 100%;
-      max-height: 100%;
-      margin: 0;
-    }
-
-    h1 {
-      font-family: 'Lato', sans-serif;
-      font-weight: 300;
-      letter-spacing: 2px;
-      font-size: 48px;
-    }
-
-    p {
-      font-family: 'Lato', sans-serif;
-      letter-spacing: 1px;
-      font-size: 14px;
-      color: #333333;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-content: center;
-      align-items: center;
-      height: 100%;
-    }
-
-    .header {
-      position: relative;
-      text-align: center;
-      background: linear-gradient(60deg, rgba(84, 58, 183, 1) 0%, rgba(0, 172, 193, 1) 100%);
-      color: white;
-      height: 80%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .logo {
-      width: 50px;
-      fill: white;
-      padding-right: 15px;
-      display: inline-block;
-      vertical-align: middle;
-    }
-
-    .inner-header {
-      height: 65%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-items: center;
-      justify-content: center;
-      align-items: center;
-      align-content: center;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    .flex {
-      /*Flexbox for containers*/
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-
-    .code {
-      height: auto;
-      display: flex;
-      align-content: center;
-      width: 80%;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      margin: 0 auto;
-    }
-
-    .waves {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      margin-bottom: -7px;
-      /*Fix for safari gap*/
-      min-height: 100px;
-      max-height: 150px;
-    }
-
-    .content {
-      position: relative;
-      height: 20%;
-      text-align: center;
-      background-color: white;
-    }
-
-    /* Animation */
-
-    .parallax>use {
-      animation: move-forever 25s cubic-bezier(.55, .5, .45, .5) infinite;
-    }
-
-    .parallax>use:nth-child(1) {
-      animation-delay: -2s;
-      animation-duration: 7s;
-    }
-
-    .parallax>use:nth-child(2) {
-      animation-delay: -3s;
-      animation-duration: 10s;
-    }
-
-    .parallax>use:nth-child(3) {
-      animation-delay: -4s;
-      animation-duration: 13s;
-    }
-
-    .parallax>use:nth-child(4) {
-      animation-delay: -5s;
-      animation-duration: 20s;
-    }
-
-    @keyframes move-forever {
-      0% {
-        transform: translate3d(-90px, 0, 0);
-      }
-
-      100% {
-        transform: translate3d(85px, 0, 0);
-      }
-    }
-
-    /*Shrinking for mobile*/
-    @media (max-width: 768px) {
-      .waves {
-        height: 40px;
-        min-height: 40px;
-      }
-
-      .content {
-        height: 30vh;
-      }
-
-      h1 {
-        font-size: 24px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -193,6 +34,11 @@
               document.writeln(window.navigator.platform, "<br/>", navigator.userAgent)
             </script>
           </code>
+        </div>
+        <div class="kefubtn">
+          <button id="kefubtn">
+            在线<br />客服
+          </button>
         </div>
       </div>
 

@@ -111,8 +111,9 @@
   background: transparent;
   padding: 0;
   top: var(--height-15);
-  margin: 0;
+  margin: auto;
   user-select: none;
+  margin-right: 0;
 
   .ant-modal-content {
     padding: 0;
@@ -146,23 +147,33 @@
   }
 }
 
-.mobile {
+@media screen and (max-width: 600px) {
   .ant-modal-body {
-    border-end-start-radius: 0;
-    border-end-end-radius: 0;
+    border-end-start-radius: 0 !important;
+    border-end-end-radius: 0 !important;
   }
 }
 
-@media screen and (min-width: 600px) {
-  .desktop {
-    .chatModalWindow {
-      /* position: absolute; */
-      top: calc(var(--height-100) - 600px - 40px);
-      height: 100%;
-      max-height: 600px;
-      width: 100%;
-      max-width: 375px;
-      margin: 0 90px 0 auto
-    }
+
+@media screen and (min-width: 600px) and (min-height: 640px) {
+  .chatModalWindow {
+    top: calc(var(--height-100) - 600px - 40px);
+    height: 100%;
+    max-height: 600px;
+    width: 100%;
+    max-width: 375px;
+    margin: 0 90px 0 auto
+  }
+}
+
+@media screen and (min-width: 600px) and (max-height: 640px) {
+  .chatModalWindow {
+    top: 0;
+    height: 100%;
+    max-height: 600px;
+    width: 100%;
+    max-width: 375px;
+    margin: auto;
+    margin-right: 0;
   }
 }

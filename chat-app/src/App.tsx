@@ -2,22 +2,23 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 import WKSDK, { Channel, ChannelTypeGroup, ConnectStatus, MessageText, PullMode, SyncOptions, Message } from "wukongimjssdk"
-import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, IsIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp, isLineUrl } from './utils/utils';
+import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, getAllTextContent, getOperatingSystem, getReferer, initNotification, IsIframe, isSameDay, joinPath, loadLastLoginTime, msgDate, playSound, replaceHtml, showNotification, trim, openUniquePage, IsDev, goodbye, getMessageType, getMessageNotifyContent, convertGoTimestamp, isLineUrl, newUuid } from './utils/utils';
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
 import { Button, Image, Popover, Spin, Tooltip, message } from "antd";
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
-import { API, AppProps } from './global';
+import { API, AppProps, AutoMessage } from './global';
 import chalk from 'chalk';
 import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
 
 const isDev = IsDev()
 let isFirstLoad = true
+let isIframe = IsIframe()
 
 function App(props: AppProps) {
-    const { referer, projectUid } = props.conf
+    const { referer, projectUid, autoMsgs } = props.conf
     const apiURL = props.apiURL
     const useCache = false;
     const channelType = ChannelTypeGroup;
@@ -27,7 +28,6 @@ function App(props: AppProps) {
     const cacheMessagesKey = keyPrefix + "messages";
     const checkSendCount = createCallFrequencyChecker(10, 1000); //1秒钟内发送10次
     const maxInputLength = 800;
-    const isChildrenIframe = IsIframe()
     const notSupportText = "Not supported"
     const [showChatInputTool, setShowChatInputTool] = useState<boolean>(true);
     const [placeholdertext, setPlaceholdertext] = useState<string>("Aa");
@@ -72,6 +72,8 @@ function App(props: AppProps) {
     const prohibitSend = useRef<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage();
     const [kefuInfo, setKefuInfo] = useState<API.KefuInfo>(visitorLoginResp.current.kefu_info)
+    const visitorMessageCount = useRef<number>(0)
+    const kefuMessageCount = useRef<number>(0)
 
     const success = (msg: string) => {
         messageApi.open({
@@ -207,6 +209,9 @@ function App(props: AppProps) {
             //消息提醒
             if (!isMsgFromSelf(message)) {
                 notifyMessage(message);
+                kefuMessageCount.current++
+            }else{
+                kefuMessageCount.current++
             }
             //来消息通知了，则应该滚动到消息窗口最底部
             historyScrollToBottom();
@@ -239,7 +244,7 @@ function App(props: AppProps) {
     const notifyMessage = (message: Message) => {
         const body = getMessageNotifyContent(message)
         if (!body) return
-        if (isChildrenIframe) {
+        if (isIframe) {
             //如果是iframe页面，应该通知父页面
             sendMessageToParent(body)
         }
@@ -251,7 +256,7 @@ function App(props: AppProps) {
             this.close();
             //需要判断当前页面处于Iframe中还是单独的标签页中
             let chatWebUrl = getReferer(); //打开标签页
-            if (isChildrenIframe) {
+            if (isIframe) {
                 //打开父页面
                 chatWebUrl = referer
             }

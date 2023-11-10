@@ -357,7 +357,7 @@ export const showNotification = (title: string, options: NotificationOptions | u
             type: "message",
             data: {
                 content: options?.body
-            }
+            },
         }, window.parent.location.href);
     }
     if (!("Notification" in window)) {
