@@ -218,12 +218,12 @@ function App(appProps: AppProps) {
       return
     }
     //打开drawer聊天面板
-    const width = window.innerWidth;
-    if (width <= 320) {
-      //太小的屏幕，我们直接打开一个新窗口进行聊天
-      openChatPage()
-      return
-    }
+    // const width = window.innerWidth;
+    // if (width <= 320) {
+    //   //太小的屏幕，我们直接打开一个新窗口进行聊天
+    //   openChatPage()
+    //   return
+    // }
     switchChatWindow()
   }
 
