@@ -455,6 +455,7 @@ function App(appProps: AppProps) {
   }
 
   useEffect(() => {
+    !hideBtn && setShowFloatButton(true)
     window.LICAT_KEFU.openChatWindow = onClickButton;
     if (bindElement.current) {
       bindElement.current.addEventListener("click", onClickButton)

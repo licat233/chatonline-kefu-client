@@ -666,6 +666,23 @@ const App = (props: AppProps) => {
   }
 
 
+  // const testSend = () => {
+  //   let count = 0
+  //   let timer = setInterval(() => {
+  //     if (count >= 100) {
+  //       clearInterval(timer)
+  //       return
+  //     }
+  //     count++
+  //     handleSend("text", count + "")
+  //   }, 500)
+  // }
+
+  // window.LICAT_KEFU.Test = () => {
+  //   testSend()
+  // };
+
+
   // 默认快捷短语，可选
   const defaultQuickReplies: QuickReplyItemProps[] = [
     {

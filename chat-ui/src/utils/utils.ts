@@ -635,14 +635,12 @@ export function createCallFrequencyChecker(threshold: number, timeWindow: number
 
     return function checkCallFrequency(): boolean {
         const currentTime = Date.now();
-
         if (currentTime - lastCallTime < timeWindow) {
             callCount++;
         } else {
             callCount = 1;
+            lastCallTime = currentTime;
         }
-
-        lastCallTime = currentTime;
         return callCount <= threshold
     };
 }

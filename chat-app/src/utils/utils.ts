@@ -641,9 +641,8 @@ export function createCallFrequencyChecker(threshold: number, timeWindow: number
             callCount++;
         } else {
             callCount = 1;
+            lastCallTime = currentTime;
         }
-
-        lastCallTime = currentTime;
         return callCount <= threshold
     };
 }
