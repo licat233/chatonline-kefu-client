@@ -7,12 +7,7 @@ import { IsDev, addQueryParam, getRandomItem, getReferer, getSupportList, isDesk
 // import chalk from 'chalk';
 import { encryptData, encryptString } from './utils/crypto';
 import { AppProps, ChatAppConf, PostMessage, unreadMsg } from "./model";
-
-enum NotifyMessageType {
-  Msg = "message",
-  Tip = "tip",
-  Preset = "preset",
-}
+import { NotifyMessageType } from './enum';
 
 const isDev = IsDev()
 const isPC = isDesktopUA()
@@ -232,7 +227,7 @@ function App(appProps: AppProps) {
     switchChatWindow()
   }
 
-  const notifyMessage = (content: string | undefined, type?: string) => {
+  const notifyMessage = (content: string | undefined, type?: NotifyMessageType) => {
     if (!content) return;
     //判断当前窗口是否是打开状态，如果是打开状态，则不用通知
     if (openChatWindow) return;
@@ -241,6 +236,7 @@ function App(appProps: AppProps) {
     unreadMessage.count = unreadMessage.count + 1
     unreadMessage.lastMsg = content
     setUnreadMessage({ ...unreadMessage });
+    //前端预设的消息，不用存储
     if (type === NotifyMessageType.Preset) return
     localStorage.setItem(unreadMsgCacheKey, JSON.stringify(unreadMessage))
   }

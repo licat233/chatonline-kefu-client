@@ -1,4 +1,5 @@
 import { PullMode } from "wukongimjssdk";
+import {NotifyMessageType} from "./enum";
 
 export namespace API {
     export interface KefuInfo {

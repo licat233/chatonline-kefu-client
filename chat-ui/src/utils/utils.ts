@@ -52,6 +52,7 @@ export function getTodayDate() {
 }
 
 export function formatTime(dateString: string | number | Date) {
+    dateString = dateString || new Date().getTime()
     var date = new Date(dateString);
 
     var year = date.getFullYear();
@@ -75,6 +76,7 @@ export function getTwoDaysAgoDate() {
 }
 
 export function friendlyDate(timestamp: number) {
+    timestamp = timestamp || new Date().getTime()
     let formats: Record<string, string> = {
         'year': '%n% years ago',
         'month': '%n% months ago',
@@ -126,6 +128,7 @@ export function friendlyDate(timestamp: number) {
 
 //根据时间戳，判断活期消息日期属于哪天：今天，昨天，9/27二
 export function msgDate(timestamp: number) {
+    timestamp = timestamp || new Date().getTime()
     let n = (timestamp + "").length
     if (n === 10) {
         timestamp = timestamp * 1000
@@ -158,6 +161,7 @@ export function msgDate(timestamp: number) {
 }
 
 export function isToday(timestamp: number) {
+    timestamp = timestamp || new Date().getTime()
     let nowTimestamp = new Date().getTime();
     let seconds = Math.floor((nowTimestamp - timestamp) / 1000);
     let minutes = Math.floor(seconds / 60);
@@ -168,6 +172,7 @@ export function isToday(timestamp: number) {
 }
 
 export function msgTime(timestamp: string | number | Date) {
+    timestamp = timestamp || new Date().getTime()
     let time = dayjs(timestamp);
     // 获取小时
     let hours = time.hour();
@@ -719,7 +724,7 @@ export const getMessageNotifyContent = (msg: wkMessage): string => {
     switch (contentType) {
         case 1:
             //默认为文本消息
-            const text = msg.content.text || msg.content?.contentObj?.content
+            const text = msg.content.text || msg.content?.contentObj?.content || ""
             if (typeof text !== "string") {
                 return ""
             }

@@ -1,3 +1,5 @@
+import { NotifyMessageType } from "./enum";
+
 declare global {
     interface Window {
         LICAT_KEFU: CurrentAppConf,
@@ -10,12 +12,14 @@ export interface PostMessage {
     type?: NotifyMessageType,
 }
 
+export type AutoMessage = string | string[]
+
 export interface CurrentAppConf {
     slogan?: string, //口号
     projectUid?: string, //项目uid
     chatUrl?: string, //聊天页面所在url
     chatVersion?: string, //聊天页面版本
-    autoMsgs?: (string | string[])[], //自动回复的消息
+    autoMsgs?: AutoMessage[], //自动回复的消息
     cvUrls?: string[], //转化链接
     useChat?: boolean, //是否使用聊天功能
     newPage?: boolean, //是否打开新页面进行聊天

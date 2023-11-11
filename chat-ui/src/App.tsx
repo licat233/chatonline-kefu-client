@@ -12,12 +12,8 @@ import chalk from 'chalk';
 import "./App.css";
 import { Image as AntdImage } from 'antd';
 import { EnvironmentFilled, SafetyCertificateFilled } from '@ant-design/icons';
+import { NotifyMessageType } from './enum';
 
-enum NotifyMessageType {
-  Msg = "message",
-  Tip = "tip",
-  Preset = "preset"
-}
 
 const isDev = IsDev()
 const isIframe = IsIframe()
@@ -60,6 +56,8 @@ const App = (props: AppProps) => {
   const isFirstOpen = useRef<boolean>(true)
   const visitorMessageCount = useRef<number>(0)
   const kefuMessageCount = useRef<number>(0)
+  const hasNewestKefuMessage = useRef<boolean>(false)
+  const hasNewestVisitorMessage = useRef<boolean>(false)
 
   const getAvatarUrl = (uid?: string) => {
     uid = uid ?? visitorLoginResp.current.kefu_info.uid
@@ -126,6 +124,7 @@ const App = (props: AppProps) => {
   const autoReplyTimer = useRef<any>()
   const autoReplyDuration = useRef<number>(3000)
   const startupAutoReply = () => {
+    if (!isLogined.current) return
     if (Array.isArray(autoMsgs)) {
       autoReplyMessages.current = []
       autoMsgs.forEach(msg => {
@@ -140,16 +139,16 @@ const App = (props: AppProps) => {
   }
 
   // 自动回复消息，规则：
-  // 如果游客回复了消息，则立即停止自动回复
-  // 如果客服回复了消息，则立即停止自动回复
+  // 如果游客有回复过消息，则立即停止自动回复
+  // 如果客服即时发送了消息，则立即停止自动回复
   // 预设的消息已经回复完毕
   const autoReplyEvent = () => {
-    if (kefuMessageCount.current > 1 || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
+    if (hasNewestKefuMessage.current || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
       clearTimeout(autoReplyTimer.current)
       return
     }
     autoReplyTimer.current = setTimeout(() => {
-      if (kefuMessageCount.current > 1 || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
+      if (hasNewestKefuMessage.current || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
         setTyping(false)
         clearTimeout(autoReplyTimer.current)
         return
@@ -171,7 +170,15 @@ const App = (props: AppProps) => {
       isFirstOpen.current = false
       startAutoCloseSummary.current = true
       setTimeout(() => {
-        startupAutoReply()
+        if (isLogined.current) {
+          startupAutoReply()
+        } else {
+          //如果还未登录
+          //3s后执行
+          setTimeout(() => {
+            startupAutoReply()
+          }, 3000)
+        }
       }, 1000)
     }
 
@@ -462,8 +469,10 @@ const App = (props: AppProps) => {
       //消息提醒
       if (isMsgFromSelf(message)) {
         visitorMessageCount.current++
+        hasNewestVisitorMessage.current = true;
       } else {
         kefuMessageCount.current++
+        hasNewestKefuMessage.current = true;
         notifyMessage(getMessageNotifyContent(message));
       }
     });
@@ -510,7 +519,7 @@ const App = (props: AppProps) => {
 
   const getMessageTextare = (msg: WkMessage): string => {
     msg = msg || {};
-    let content = msg.content.text || msg.content.contentObj.text || "";
+    let content = msg.content.text || msg.content.contentObj.content || "";
     content = content.trim()
     let res = decodeURIComponent(content);
 

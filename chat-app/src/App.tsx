@@ -6,12 +6,13 @@ import { copyTextToClipboard, createCallFrequencyChecker, addAnchorTagsToUrls, g
 import { encryptData, decryptJSONString } from "./utils/crypto";
 import axios from 'axios';
 import autosize from "autosize";
-import { Button, Image, Popover, Spin, Tooltip, message } from "antd";
+import { Button, Image, List, Popover, Spin, Tooltip, message } from "antd";
 import dayjs from 'dayjs';
 import { Convert } from './utils/covert';
 import { API, AppProps, AutoMessage } from './model';
 import chalk from 'chalk';
 import { AudioOutlined, CameraOutlined, MenuOutlined, PhoneOutlined, PictureOutlined, PlusOutlined, RightOutlined, SearchOutlined, SmileOutlined } from '@ant-design/icons';
+import { CustomMessageType, NotifyMessageType } from "./enum";
 
 const isDev = IsDev()
 let isFirstLoad = true
@@ -72,8 +73,12 @@ function App(props: AppProps) {
     const prohibitSend = useRef<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage();
     const [kefuInfo, setKefuInfo] = useState<API.KefuInfo>(visitorLoginResp.current.kefu_info)
+    const isFirstOpen = useRef<boolean>(true)
     const visitorMessageCount = useRef<number>(0)
     const kefuMessageCount = useRef<number>(0)
+    const hasNewestKefuMessage = useRef<boolean>(false)
+    const hasNewestVisitorMessage = useRef<boolean>(false)
+    const allMessages = useRef<Message[]>([...messageStore])
 
     const success = (msg: string) => {
         messageApi.open({
@@ -116,12 +121,104 @@ function App(props: AppProps) {
         }
     }
 
+    const renderQuestionCard = (titles: string[]) => {
+        const clickHandler = (title: string, event?: React.MouseEvent<HTMLDivElement>) => {
+            handleSend(title, event)
+        }
+        return (<div>
+            <h4>你是否想諮詢：</h4>
+            <List
+                size="small"
+                className='questionList'
+                dataSource={titles}
+                renderItem={(title, index) => {
+                    return <List.Item className='questionListItem' key={"question-list-" + index} onClick={(event) => { clickHandler(title, event) }}>{title}</List.Item>
+                }}
+            />
+        </div>)
+    }
+
+    const newWkMessage = (content: any, type?: number): Message => {
+        const msg = new Message()
+        type = type || 1
+        msg.fromUID = kefuInfo.uid
+        msg.channel = newChannel()
+        msg.messageID = newUuid()
+        msg.clientMsgNo = newUuid()
+        // msg.messageSeq = 0
+        msg.content = {
+            contentObj: content,
+            realContentType: type,
+        }
+        msg.timestamp = new Date().getTime()
+        msg.status = 1
+        return msg
+    }
+
+    const autoReplyMessages = useRef<Message[]>([])
+    const autoReplyIndex = useRef<number>(0)
+    const autoReplyTimer = useRef<any>()
+    const autoReplyDuration = useRef<number>(3000)
+    const startupAutoReply = () => {
+        if (!isLogined.current) return
+        if (Array.isArray(autoMsgs)) {
+            autoReplyMessages.current = []
+            autoMsgs.forEach((msg: AutoMessage) => {
+                if (Array.isArray(msg)) {
+                    autoReplyMessages.current.push(newWkMessage({ jsx: renderQuestionCard(msg), type: CustomMessageType.JSX }, CustomMessageType.JSX))
+                } else {
+                    autoReplyMessages.current.push(newWkMessage({ content: msg, type: 1 }))
+                }
+            })
+        }
+        autoReplyEvent()
+    }
+
+    // 自动回复消息，规则：
+    // 如果游客有回复过消息，则立即停止自动回复
+    // 如果客服即时发送了消息，则立即停止自动回复
+    // 预设的消息已经回复完毕
+    const autoReplyEvent = () => {
+        if (hasNewestKefuMessage.current || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
+            clearTimeout(autoReplyTimer.current)
+            return
+        }
+        autoReplyTimer.current = setTimeout(() => {
+            if (hasNewestKefuMessage.current || visitorMessageCount.current > 0 || autoReplyIndex.current >= autoReplyMessages.current.length) {
+                clearTimeout(autoReplyTimer.current)
+                return
+            }
+            const msg = autoReplyMessages.current[autoReplyIndex.current];
+            msg.messageSeq = autoReplyIndex.current
+            messageStore.push(msg)
+            setMessageStore([...messageStore])
+            notifyMessage(msg, NotifyMessageType.Preset);
+            autoReplyIndex.current++
+            autoReplyDuration.current += 2000
+            autoReplyEvent()
+        }, autoReplyDuration.current)
+    }
+
     //当展示当前窗口时，应该滚动聊天记录到底部
     const openChatCallback = () => {
         historyScrollToBottom();
+        if (!isIframe) return;
+        if (isFirstOpen.current) {
+            isFirstOpen.current = false;
+            setTimeout(() => {
+                if (isLogined.current) {
+                    startupAutoReply()
+                }
+            }, 1000)
+        }
+
     }
+
     window.LICAT_KEFU.openChatCallback = openChatCallback
 
+    useEffect(() => {
+        allMessages.current = [...messageStore]
+    }, [messageStore])
 
     useEffect(() => {
         if (isFirstLoad) {
@@ -201,17 +298,24 @@ function App(props: AppProps) {
         // 消息监听
         WKSDK.shared().chatManager.addMessageListener((message) => {
             if (!verifyMsg(message)) return; //忽略掉不支持的消息
-            messageStore.push(message);
+            //解决因为setTimeout内更新导致messageStore不一致问题
+            let currentMessages = messageStore
+            if (allMessages.current.length > messageStore.length) {
+                currentMessages = allMessages.current
+            }
+            currentMessages.push(message);
             //更新视图
-            setMessageStore([...messageStore]);
+            setMessageStore([...currentMessages]);
             //缓存至本地: 1.先读取，再写入
-            saveCacheMessages(messageStore);
+            saveCacheMessages(currentMessages);
             //消息提醒
             if (!isMsgFromSelf(message)) {
                 notifyMessage(message);
                 kefuMessageCount.current++
-            }else{
-                kefuMessageCount.current++
+                hasNewestKefuMessage.current = true
+            } else {
+                visitorMessageCount.current++
+                hasNewestVisitorMessage.current = true
             }
             //来消息通知了，则应该滚动到消息窗口最底部
             historyScrollToBottom();
@@ -230,23 +334,23 @@ function App(props: AppProps) {
         return true
     }
 
-    const sendMessageToParent = (messageBody: string) => {
+    const sendMessageToParent = (messageBody: string, messageType?: NotifyMessageType) => {
         const parentUrl = window.top?.location.href
         if (!parentUrl) return
         const msg: API.PostMessage = {
             content: messageBody,
             source: "chatOnlineApp",
-            type: "message",
+            type: messageType,
         }
         window.parent.postMessage(msg); // 这里需要根据实际情况设置目标 origin
     };
 
-    const notifyMessage = (message: Message) => {
+    const notifyMessage = (message: Message, type?: NotifyMessageType) => {
         const body = getMessageNotifyContent(message)
         if (!body) return
         if (isIframe) {
             //如果是iframe页面，应该通知父页面
-            sendMessageToParent(body)
+            sendMessageToParent(body, type)
         }
         showNotification("New message", {
             body: replaceHtml(body),
@@ -315,7 +419,15 @@ function App(props: AppProps) {
             loadRecordCompleted.current = true;
             return
         }
-        setMessageStore([...messages, ...messageStore]);
+        messages.forEach(wkMsg => {
+            if (isMsgFromSelf(wkMsg)) {
+                visitorMessageCount.current++
+            } else {
+                kefuMessageCount.current++
+            }
+        });
+        messageStore.unshift(...messages);
+        setMessageStore([...messageStore]);
     }
 
     //加载更多聊天记录
@@ -551,17 +663,8 @@ function App(props: AppProps) {
         }
     }
 
-    const submitMsg = async (event: React.MouseEvent<HTMLDivElement>) => {
-        event.stopPropagation();// 阻止blur事件冒泡
-        if (prohibitSend.current) {
-            warning("Detected abnormal operation, current operation has been disabled!")
-            return
-        }
-        if (!isStartuped.current) return
-        let text = getInputContext();
-        if (text.length === 0) {
-            return;
-        }
+    const handleSend = async (text: string, event?: React.MouseEvent<HTMLDivElement>) => {
+        event && event.stopPropagation();// 阻止blur事件冒泡
         if (!checkSendCount()) {
             prohibitSend.current = true
             return;
@@ -589,19 +692,37 @@ function App(props: AppProps) {
         //     messageStore.push(alertMsg)
         //     setMessageStore([...messageStore])
         // }
-        setInputContext("");
-        //高度回归自动
-        textareaRef.current?.style.setProperty("height", "");
-        // setHoldFocus(true); //保持聚焦
-        setIsFocus(true);
-        oninput(); //保持輸入狀態
+        if (event) {
+            setInputContext("");
+            //高度回归自动
+            textareaRef.current?.style.setProperty("height", "");
+            // setHoldFocus(true); //保持聚焦
+            setIsFocus(true);
+            oninput(); //保持輸入狀態
+            //防止阻止系统默认(行为)，主要是为了阻止onblur事件
+            event.preventDefault();
+        }
+
         //压栈，渲染完成后再执行
         setTimeout(() => {
             historyScrollToBottom();
         });
-        //防止阻止系统默认(行为)，主要是为了阻止onblur事件
-        event.preventDefault();
     }
+
+    const submitMsg = async (event?: React.MouseEvent<HTMLDivElement>) => {
+        event && event.stopPropagation();// 阻止blur事件冒泡
+        if (prohibitSend.current) {
+            warning("Detected abnormal operation, current operation has been disabled!")
+            return
+        }
+        if (!isStartuped.current) return
+        let text = getInputContext();
+        if (text.length === 0) {
+            return;
+        }
+        await handleSend(text, event);
+    }
+
     const handleKeyDown = (event: any) => {
         if (event.shiftKey && event.keyCode === 13) {
             // 按下 Shift+Enter，添加换行符
@@ -678,6 +799,10 @@ function App(props: AppProps) {
                 if (!url) return false
                 url = url + ""
                 return url.trim().length !== 0
+            case CustomMessageType.JSX:
+                //jsx消息
+                let jsx = msg.content?.contentObj?.jsx;
+                return !!jsx
             default:
                 //其它类型消息，暂不支持
                 return false
@@ -717,7 +842,7 @@ function App(props: AppProps) {
 
     const getMessageTextare = (msg: Message): string => {
         msg = msg || {};
-        let content = msg.content.text || msg.content.contentObj.text || "";
+        let content = msg.content.text || msg.content.contentObj.content || "";
         content = content.trim()
         let res = decodeURIComponent(content);
 
@@ -835,6 +960,14 @@ function App(props: AppProps) {
                         </div>
                     </div>
                 )
+            case CustomMessageType.JSX:
+                //jsx消息
+                let jsx = msg.content?.contentObj?.jsx;
+                return (<div className="chatmessage">
+                    <div className='messagecontent'>
+                        {jsx}
+                    </div>
+                </div>)
             default:
                 return (
                     <div className="chatmessage">
@@ -898,7 +1031,7 @@ function App(props: AppProps) {
 
     const viewMessageCard = (msg: Message, index: number) => {
         return (
-            <div key={msg.clientMsgNo}>
+            <div key={msg.messageID || msg.clientMsgNo || msg.timestamp}>
                 {renderMsgDateCard(msg, index)}
                 <div className="chatinfocard">
                     {renderMsgContentCard(msg)}

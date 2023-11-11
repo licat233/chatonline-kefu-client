@@ -835,3 +835,7 @@ textarea::resizer {
   -webkit-user-drag: none;
   user-select: none;
 }
+
+.questionListItem{
+  color: #111111 !important;
+}
